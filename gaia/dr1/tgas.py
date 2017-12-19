@@ -236,7 +236,7 @@ class TGASStar(TGASData):
                       self.pm_ra_cosdec.value, self.pm_dec.value])
         return y
 
-    def get_y_samples(self, size=1):
+    def get_y_samples(self, size=None):
         """Get samples from the error distribution over the data vector (RA,
         Dec, parallax, RA proper motion, Dec proper motion). The RA proper
         motion already includes the ``cos(dec)`` term.
@@ -257,7 +257,7 @@ class TGASStar(TGASData):
         samples = np.random.multivariate_normal(y, Cov, size=size)
         return samples
 
-    def get_coord_samples(self, size=1):
+    def get_coord_samples(self, size=None):
         """Create an `astropy.coordinates` object with samples from the error
         distribution over astrometric data.
 
@@ -277,9 +277,9 @@ class TGASStar(TGASData):
         TODO: combining with radial velocity data
 
         """
-        samples = self.get_y_samples(self, size=size)
-        return coord.ICRS(ra=samples[:,0] * u.deg,
-                          dec=samples[:,1] * u.deg,
-                          distance=1000./samples[:,2] * u.pc,
-                          pm_ra_cosdec=samples[:,3] * u.mas/u.yr,
-                          pm_dec=samples[:,4] * u.mas/u.yr)
+        samples = self.get_y_samples(size=size).T
+        return coord.ICRS(ra=samples[0] * u.deg,
+                          dec=samples[1] * u.deg,
+                          distance=1000./samples[2] * u.pc,
+                          pm_ra_cosdec=samples[3] * u.mas/u.yr,
+                          pm_dec=samples[4] * u.mas/u.yr)
