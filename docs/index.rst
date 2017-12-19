@@ -1,7 +1,7 @@
 .. _gaia:
 
 ###################################################
-Gaia: a Python package for working with _Gaia_ data
+Gaia: a Python package for working with *Gaia* data
 ###################################################
 
 TODO: introduction
