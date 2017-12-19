@@ -17,7 +17,13 @@ def test_init_dunder():
     t2 = TGASData(fits.getdata(tgas_filename, 1))
 
     # __getattr__
-    # TODO:
+    assert hasattr(t1, 'pm_ra_cosdec')
+    t1.pm_ra_cosdec # make sure this works
+
+    assert hasattr(t1, 'random_index')
+    t1.random_index
+
+    t1.data
 
     # __getitem__
     star = t1[0]
