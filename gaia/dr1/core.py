@@ -59,4 +59,17 @@ class DataMeta(abc.ABCMeta):
         # the object attribute names instead of the table column names
         members['_extra_dir_names'] = list(members['_obj_to_tbl'].keys())
 
+        # Pre-compute unit scale factors to make generating the covariance
+        # matrix fast. This is for cases where the '<name>_error' unit is
+        # different from the unit of the column '<name>'
+        _err_unit_scale_factor = dict()
+        for name in members['_tbl_to_unit']:
+            err_name = "{0}_error".format(name)
+            if (name in members['_tbl_to_unit'] and
+                    err_name in members['_tbl_to_unit']):
+                err_unit = members['_tbl_to_unit'][err_name]
+                col_unit = members['_tbl_to_unit'][name]
+                _err_unit_scale_factor[err_name] = err_unit.to(col_unit)
+        members['_err_unit_scale_factor'] = _err_unit_scale_factor
+
         return super().__new__(mcls, name, bases, members)
