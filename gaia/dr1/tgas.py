@@ -193,3 +193,25 @@ class TGASStar(TGASData):
             self._cov = C
 
         return self._cov
+
+    def get_y(self):
+        y = np.array([self.ra.value, self.dec.value, self.parallax.value,
+                      self.pm_ra_cosdec.value, self.pm_dec.value])
+        return y
+
+    def get_y_samples(self, size=1):
+        y = self.get_y()
+        Cov = self.get_cov()
+        samples = np.random.multivariate_normal(y, Cov, size=size)
+        return samples
+
+    def get_coord_samples(self, size=1):
+        """Create an `astropy.coordinates` object with samples from the error
+        distribution over astrometric data.
+        """
+        samples = self.get_y_samples(self, size=size)
+        return coord.ICRS(ra=samples[:,0] * u.deg,
+                          dec=samples[:,1] * u.deg,
+                          distance=1000./samples[:,2] * u.pc,
+                          pm_ra_cosdec=samples[:,3] * u.mas/u.yr,
+                          pm_dec=samples[:,4] * u.mas/u.yr)
