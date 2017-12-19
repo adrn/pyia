@@ -101,7 +101,7 @@ class TGASData(metaclass=DataMeta):
         else:
             tmp = self.parallax
 
-        return tmp.to(u.pc, u.parallax())
+        return coord.Distance(tmp.to(u.pc, u.parallax()))
 
     def get_vtan(self, lutz_kelker=False):
         """Return the tangential velocity computed using the proper motion and
@@ -121,28 +121,6 @@ class TGASData(metaclass=DataMeta):
                           distance=self.get_distance(lutz_kelker=lutz_kelker),
                           pm_ra_cosdec=self.pm_ra_cosdec,
                           pm_dec=self.pm_dec)
-
-    def get_cov(self):
-        """Return the covariance matrix for all objects in the same units as the
-        data.
-        """
-        pass
-
-    # def get_coord_samples(self, size=1):
-    #     y = np.array([self.ra.value, self.dec.value, self.parallax.value,
-    #                   self.pmra.value, self.pmdec.value])
-    #     Cov = self.get_cov()[:5,:5]
-    #     samples = np.random.multivariate_normal(y, Cov, size=size)
-
-    #     kw = dict()
-    #     if rv:
-    #         rv_samples = np.random.normal(rv.value, rv_err.value, size=size) * rv.unit
-    #         kw['radial_velocity'] = rv_samples
-
-    #     return coord.ICRS(ra=samples[:,0]*u.deg, dec=samples[:,1]*u.deg,
-    #                       distance=1000./samples[:,2]*u.pc,
-    #                       pm_ra_cosdec=samples[:,3]*u.mas/u.yr,
-    #                       pm_dec=samples[:,4]*u.mas/u.yr, **kw)
 
     # --------------------------------------------------------------------------
     # Custom attributes:
@@ -183,25 +161,9 @@ class TGASStar(TGASData):
     def __len__(self):
         return 1
 
-#     def __getitem__(self, slc):
-#         object.__getitem__(self, slc)
-
-#     def __str__(self):
-#         infostr = '\n'.join([
-#             # 'index    = %i' %(i),
-#             'ra       = %s' % (self.ra),
-#             'dec      = %s' % (self.dec),
-#             'parallax = %s (snr = %.1f)' % (self.parallax, self.parallax_snr),
-#             'pmra     = %s (snr = %.1f)' % (self.pmra, self.pmra/self.pmra_error),
-#             'pmdec    = %s (snr = %.1f)' % (self.pmdec, self.pmdec/self.pmdec_error),
-#             'dist vra vdec = %s %s' % (self.get_distance(), self.get_vtan()),
-#         ])
-#         return infostr
-
     def get_cov(self):
-        """
-        Retrieve the 5x5 covariance matrix for all astrometric data components
-        in the units of the components.
+        """Retrieve the 5x5 covariance matrix for all astrometric data
+        components in the units of the components.
         """
 
         tbl_names = ['ra', 'dec', 'parallax', 'pmra', 'pmdec']
@@ -210,10 +172,9 @@ class TGASStar(TGASData):
 
             # pre-load the diagonal
             for i,name in enumerate(tbl_names):
-                obj_name = self._tbl_to_obj[name]
-                unit = self._tbl_to_unit[name]
-                val = getattr(self, "{0}_error".format(obj_name))
-                C[i,i] = val.to(unit).value**2
+                err_name = "{0}_error".format(name)
+                fac = self._err_unit_scale_factor[err_name]
+                C[i,i] = (self.data[err_name] * fac) ** 2
 
             for i,name1 in enumerate(tbl_names):
                 for j,name2 in enumerate(tbl_names):
