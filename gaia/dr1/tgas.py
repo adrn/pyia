@@ -92,6 +92,12 @@ class TGASData(metaclass=DataMeta):
     #
     def get_distance(self, lutz_kelker=False):
         """Return the distance with or without the Lutz-Kelker correction.
+
+        Parameters
+        ----------
+        lutz_kelker : bool, optional
+            Apply the Lutz-Kelker correction to the distance. You probably don't
+            want to do this.
         """
 
         if lutz_kelker:
@@ -106,6 +112,12 @@ class TGASData(metaclass=DataMeta):
     def get_vtan(self, lutz_kelker=False):
         """Return the tangential velocity computed using the proper motion and
         distance.
+
+        Parameters
+        ----------
+        lutz_kelker : bool, optional
+            Apply the Lutz-Kelker correction to the distance. You probably don't
+            want to do this.
         """
         d = self.get_distance(lutz_kelker=lutz_kelker)
         vra = (self.pm_ra_cosdec * d).to(u.km/u.s,
@@ -116,6 +128,12 @@ class TGASData(metaclass=DataMeta):
     def get_coord(self, lutz_kelker=False):
         """
         Return an `astropy.coordinates` object to represent all coordinates.
+
+        Parameters
+        ----------
+        lutz_kelker : bool, optional
+            Apply the Lutz-Kelker correction to the distance. You probably don't
+            want to do this.
         """
         return coord.ICRS(ra=self.ra, dec=self.dec,
                           distance=self.get_distance(lutz_kelker=lutz_kelker),
@@ -164,6 +182,16 @@ class TGASStar(TGASData):
     def get_cov(self):
         """Retrieve the 5x5 covariance matrix for all astrometric data
         components in the units of the components.
+
+        For example, in the source TGAS file, the error in RA is given in mas,
+        but the value of RA is given in degrees. Here, the covariance matrix
+        elements that include the RA error will have "degree" units, not mas.
+
+        Returns
+        -------
+        cov : `numpy.ndarray`
+            A 5 by 5 array containing the covariance matrix for all astrometric
+            components for this star.
         """
 
         tbl_names = ['ra', 'dec', 'parallax', 'pmra', 'pmdec']
@@ -195,11 +223,35 @@ class TGASStar(TGASData):
         return self._cov
 
     def get_y(self):
+        """Get a single data vector containing RA, Dec, parallax, RA proper
+        motion, Dec proper motion. The RA proper motion already includes the
+        ``cos(dec)`` term.
+
+        Returns
+        -------
+        y : `numpy.ndarray`
+            A length-5 array of astrometric data.
+        """
         y = np.array([self.ra.value, self.dec.value, self.parallax.value,
                       self.pm_ra_cosdec.value, self.pm_dec.value])
         return y
 
     def get_y_samples(self, size=1):
+        """Get samples from the error distribution over the data vector (RA,
+        Dec, parallax, RA proper motion, Dec proper motion). The RA proper
+        motion already includes the ``cos(dec)`` term.
+
+        Parameters
+        ----------
+        size : int, optional
+            The number of samples to generate.
+
+        Returns
+        -------
+        y_samples : `numpy.ndarray`
+            A shape ``(size, 5)`` array of samples from the astrometric data
+            error distribution.
+        """
         y = self.get_y()
         Cov = self.get_cov()
         samples = np.random.multivariate_normal(y, Cov, size=size)
@@ -208,6 +260,22 @@ class TGASStar(TGASData):
     def get_coord_samples(self, size=1):
         """Create an `astropy.coordinates` object with samples from the error
         distribution over astrometric data.
+
+        Parameters
+        ----------
+        size : int, optional
+            The number of samples to generate.
+
+        Returns
+        -------
+        coord_samples : `~astropy.coordinates.ICRS`
+            A single array-valued `astropy.coordinates` object containing the
+            samples from the error distribution.
+
+        Examples
+        --------
+        TODO: combining with radial velocity data
+
         """
         samples = self.get_y_samples(self, size=size)
         return coord.ICRS(ra=samples[:,0] * u.deg,
