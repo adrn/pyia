@@ -73,25 +73,39 @@ class GaiaData:
         self._cov_units = None
 
     @classmethod
-    def from_query(cls, query_str, table=''):
+    def from_query(cls, query_str, login_info=None):
         """
         Run the specified query and return a `GaiaData` instance with the
         returned data.
 
         This is meant only to be used for quick queries to the main Gaia science archive. For longer queries and more customized usage, use TAP access to any of the Gaia mirrors with, e.g., astroquery or pyvo.
 
+        This requires ``astroquery`` to be installed.
+
         Parameters
         ----------
         query_str : str
             The string ADQL query to execute.
+        login_info : dict, optional
+            Username and password for the Gaia science archive as keys "user"
+            and "password". If not specified, will use anonymous access, subject
+            to the query limits.
 
         Returns
         -------
         gaiadata : `GaiaData`
             An instance of this object.
+
         """
-        # TODO: specify the table?
-        pass
+        from astroquery.gaia import Gaia
+
+        if login_info is not None:
+            Gaia.login(**login_info)
+
+        job = Gaia.launch_job_async(query_str)
+        tbl = job.get_results()
+
+        return cls(tbl)
 
     ##########################################################################
     # Python internal
