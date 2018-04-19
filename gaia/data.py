@@ -11,7 +11,7 @@ import astropy.units as u
 import pandas as pd
 
 # Project
-from ..utils import cached_property
+from .utils import cached_property
 
 __all__ = ['GaiaData']
 
@@ -24,8 +24,8 @@ gaia_unit_map = {
     'pmra': u.milliarcsecond / u.year,
     'pmdec': u.milliarcsecond / u.year,
     'radial_velocity': u.km / u.s,
-    'ra_error': u.degree,
-    'dec_error': u.degree,
+    'ra_error': u.milliarcsecond,
+    'dec_error': u.milliarcsecond,
     'parallax_error': u.milliarcsecond,
     'pmra_error': u.milliarcsecond / u.year,
     'pmdec_error': u.milliarcsecond / u.year,
@@ -45,7 +45,7 @@ class GaiaData:
     """
 
     def __init__(self, data):
-        if not isinstance(data, Table) or not isinstance(data, pd.DataFrame):
+        if not isinstance(data, Table) and not isinstance(data, pd.DataFrame):
             # the dict-like object might have Quantity's, so we want to
             # preserve any units
             data = Table(data)
@@ -56,17 +56,41 @@ class GaiaData:
         if isinstance(data, Table):
             # Modify unit dict if the input object has custom units:
             for name in data.columns:
-                if hasattr(data[name], 'unit'):
+                # Have to do the extra check on UnrecognizedUnit because the
+                # following `not in` fails when the unit is not recognized
+                if (hasattr(data[name], 'unit') and
+                        not isinstance(data[name].unit, u.UnrecognizedUnit) and
+                        data[name].unit not in (None, u.one)):
                     self.units[name] = data[name].unit
             data = data.to_pandas()
 
         # By this point, data should always be a DataFrame (for @smoh)
         self.data = data
 
-    @classmethod
-    def from_query(cls, query_str, ):
-        pass
+        # For caching later
+        self._cov = None
+        self._cov_units = None
 
+    @classmethod
+    def from_query(cls, query_str, table=''):
+        """
+        Run the specified query and return a `GaiaData` instance with the
+        returned data.
+
+        This is meant only to be used for quick queries to the main Gaia science archive. For longer queries and more customized usage, use TAP access to any of the Gaia mirrors with, e.g., astroquery or pyvo.
+
+        Parameters
+        ----------
+        query_str : str
+            The string ADQL query to execute.
+
+        Returns
+        -------
+        gaiadata : `GaiaData`
+            An instance of this object.
+        """
+        # TODO: specify the table?
+        pass
 
     ##########################################################################
     # Python internal
@@ -74,87 +98,29 @@ class GaiaData:
     def __getattr__(self, name):
         # to prevent recursion errors:
         # nedbatchelder.com/blog/201010/surprising_getattr_recursion.html
-        if name == 'data':
+        if name in ['data', 'units']:
             raise AttributeError()
 
-        if name in GaiaData.units:
+        if name in self.units:
             return self.data[name].values * self.units[name]
 
         else:
             return self.data[name]
 
+    def __dir__(self):
+        return super().__dir__() + [str(k) for k in self.data.columns]
+
     def __getitem__(self, slc):
-        sliced = self.data[slc]
-
-        if sliced.ndim == 0: # only one row after slice
-            return GaiaSource(sliced)
-
-        else: # multiple rows
-            return GaiaData(sliced)
+        if isinstance(slc, int):
+            slc = slice(slc, slc+1)
+        return self.__class__(self.data.iloc[slc])
 
     def __len__(self):
         return len(self.data)
 
-    ##########################################################################
-    # Computed quantities
-    #
-    def get_vtan(self, lutz_kelker=True):
-        """
-        Return the tangential velocity computed using the proper motion
-        and distance.
-        """
-        d = self.get_distance(lutz_kelker=lutz_kelker)
-        vra = (self.pmra * d).to(u.km/u.s, u.dimensionless_angles()).value
-        vdec = (self.pmdec * d).to(u.km/u.s, u.dimensionless_angles()).value
-        return np.vstack((vra, vdec)).T * u.km/u.s
-
-    ##########################################################################
-    # Astropy connections
-    #
-    @cached_property
-    def coords(self):
-        """
-        Return an `~astropy.coordinates.SkyCoord` object to represent
-        all coordinates.
-        """
-        return coord.SkyCoord(ra=self.ra, dec=self.dec,
-                              distance=self.get_distance(lutz_kelker=lutz_kelker))
-
-    @property
-    def distmod(self):
-        """Distance modulus, m-M = 5 * log10(dist / (10 pc))"""
-        return coord.Distance(parallax=self.parallax).distmod
-
-    @property
-    def parallax_snr(self):
-        return self.parallax / self.parallax_error
-
-
-
-class TGASStar(TGASData):
-    def __init__(self, row, rv=None, rv_err=None):
-        self._data = row
-        self._cov = None # for caching
-        self._Cinv = None # for caching
-
-        # radial velocities
-        if rv is not None:
-            if rv_err is None:
-                raise ValueError("If radial velocity is provided, you must also "
-                                 "provide an error.")
-            self._rv = rv.to(u.km/u.s).value
-            self._rv_err = rv_err.to(u.km/u.s).value
-        else:
-            self._rv = 0. # need to do this so y can have float type
-            self._rv_err = None
-
-    def __len__(self):
-        return 1
-
-    def __getitem__(self, slc):
-        object.__getitem__(self, slc)
-
     def __str__(self):
+        # TODO:
+        infostr = 'ra'
         infostr = '\n'.join([
             # 'index    = %i' %(i),
             'ra       = %s' % (self.ra),
@@ -166,46 +132,134 @@ class TGASStar(TGASData):
         ])
         return infostr
 
-    def get_cov(self):
+    def __repr__(self):
+        return "<GaiaData: {0:d} rows>".format(len(self))
+
+    ##########################################################################
+    # Computed and convenience quantities
+    #
+    @property
+    def pm(self):
+        """2D proper motion. Has shape `(nrows, 2)`"""
+        _u = self.pmra.unit
+        return np.vstack((self.pmra.value, self.pmdec.to(_u).value)).T * _u
+
+    @property
+    def distance(self):
+        """Assumes 1/parallax. Has shape `(nrows,)`"""
+        return coord.Distance(parallax=self.parallax)
+
+    @property
+    def distmod(self):
+        """Distance modulus, m-M = 5 * log10(dist / (10 pc))"""
+        return self.distance.distmod
+
+    @property
+    def vtan(self):
         """
-        The Gaia TGAS data table contains correlation coefficients and standard
-        deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analysis
-        we need covariance matrices. This converts the Gaia table into covariance
-        matrix. If a radial velocity was specified on creation, this also contains
-        the radial velocity variance. The base units are:
-        [deg, deg, mas, mas/yr, mas/yr, km/s]
+        Tangential velocity computed using the proper motion and inverse
+        parallax as the distance. Has shape `(nrows, 2)`
+        """
+        d = self.distance
+        vra = (self.pmra * d).to(u.km/u.s, u.dimensionless_angles()).value
+        vdec = (self.pmdec * d).to(u.km/u.s, u.dimensionless_angles()).value
+        return np.vstack((vra, vdec)).T * u.km/u.s
+
+    def get_cov(self, RAM_threshold=1*u.gigabyte, units=None):
+        """
+        The Gaia data tables contain correlation coefficients and standard
+        deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses
+        we need covariance matrices. This converts the data provided by Gaia
+        into covariance matrices.
+
+        If a radial velocity exists, this also contains the radial velocity
+        variance. If radial velocity doesn't exist, that diagonal element is set
+        to inf.
+
+        The default units of the covariance matrix are [degree, degree, mas,
+        mas/yr, mas/yr, km/s], but this can be modified by passing in a
+        dictionary with new units. For example, to change just the default ra,
+        dec units for the covariance matrix, you can pass in::
+
+            units=dict(ra=u.radian, dec=u.radian)
+
+        Parameters
+        ----------
+        RAM_threshold : `astropy.units.Quantity`
+            Raise an error if the expected covariance array is larger than the
+            specified threshold. Set to ``None`` to disable this checking.
         """
 
-        if self._cov is not None:
-            return self._cov
+        if RAM_threshold is not None:
+            # Raise error if the user is going to blow up their RAM
+            estimated_RAM = 6 * 6 * len(self) * 8*u.bit
+            if estimated_RAM > RAM_threshold:
+                raise RuntimeError('Estimated RAM usage for generating '
+                                   'covariance matrices is larger than the '
+                                   'specified threshold. Use the argument: '
+                                   '`RAM_threshold=None` to disable this check')
 
+        if units is None:
+            units = dict()
+        units.setdefault('ra', u.deg)
+        units.setdefault('dec', u.deg)
+        units.setdefault('parallax', u.mas)
+        units.setdefault('pmra', u.mas/u.yr)
+        units.setdefault('pmdec', u.mas/u.yr)
+        units.setdefault('radial_velocity', u.km/u.s)
+
+        # Use cached property if it exists
+        if self._cov is not None and self._cov_units is not None:
+            unit_check = [units[k] == self._cov_units[k] for k in units]
+            if all(unit_check):
+                return self._cov
+        self._cov_units = units
+
+        # The full returned matrix
+        C = np.zeros((len(self), 6, 6))
+
+        # We handle radial_velocity separately below - doesn't have correlation
+        # coefficients with the astrometric parameters
         names = ['ra', 'dec', 'parallax', 'pmra', 'pmdec']
 
-        C = np.zeros((6,6))
-
         # pre-load the diagonal
-        for i,name in enumerate(names):
-            full_name = "{}_error".format(name)
-            C[i,i] = self._data[full_name]**2
+        for i, name in enumerate(names):
+            err = getattr(self, name + "_error")
+            C[:, i, i] = err.to(units[name]).value ** 2
 
-        for i,name1 in enumerate(names):
-            for j,name2 in enumerate(names):
+        if 'radial_velocity_error' in self.data:
+            name = 'radial_velocity'
+            err = getattr(self, name + "_error")
+            C[:, 5, 5] = err.to(units[name]).value ** 2
+
+        for i, name1 in enumerate(names):
+            for j, name2 in enumerate(names):
                 if j <= i:
                     continue
-                full_name = "{}_{}_corr".format(name1, name2)
-                C[i,j] = self._data[full_name] * np.sqrt(C[i,i]*C[j,j])
-                C[j,i] = self._data[full_name] * np.sqrt(C[i,i]*C[j,j])
 
-        if self._rv_err is not None:
-            C[5,5] = self._rv_err**2
+                corr = getattr(self, "{0}_{1}_corr".format(name1, name2))
+
+                # We don't need to worry about units here because the diagonal
+                # values have already been converted
+                C[:, i, j] = corr * np.sqrt(C[:, i, i] * C[:, j, j])
+                C[:, j, i] = C[:, i, j]
 
         self._cov = C
         return self._cov
 
-
-
-def angdist_to(ra1, dec1, ra2, dec2):
-    """Return angular distance in degrees"""
-    ra1, dec1 = np.deg2rad(ra1), np.deg2rad(dec1)
-    ra2, dec2 = np.deg2rad(ra2), np.deg2rad(dec2)
-    return np.rad2deg(np.arccos(np.sin(dec1)*np.sin(dec2) + np.cos(dec1)*np.cos(dec2)*np.cos(ra1-ra2)))
+    ##########################################################################
+    # Astropy connections
+    #
+    @cached_property
+    def skycoord(self):
+        """
+        Return an `~astropy.coordinates.SkyCoord` object to represent
+        all coordinates. Note: this requires Astropy v3.0 or higher!
+        """
+        kw = dict()
+        if 'radial_velocity' in self.data:
+            kw['radial_velocity'] = self.radial_velocity
+        return coord.SkyCoord(ra=self.ra, dec=self.dec,
+                              distance=self.distance,
+                              pm_ra_cosdec=self.pmra,
+                              pm_dec=self.pmdec, **kw)
