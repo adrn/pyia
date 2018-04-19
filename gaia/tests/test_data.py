@@ -91,3 +91,12 @@ def test_skycoord():
 
     c = gd.skycoord
     assert len(c) == len(gd)
+
+
+@pytest.mark.remote_data
+@pytest.mark.xfail # Gaia archive is down!
+def test_from_query():
+    q = '''SELECT TOP 10 * FROM gaiadr1.tgas_source'''
+    gd = GaiaData.from_query(q)
+
+    assert len(gd) == 10
