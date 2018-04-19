@@ -52,7 +52,10 @@ def test_slicing_getattr():
 
 
 def test_str_repr():
-    raise NotImplementedError()
+    filename = get_pkg_data_filename('data/gdr2mock.fits')
+    gd = GaiaData(Table.read(filename))
+    assert 'GaiaData' in repr(gd)
+    assert '100 rows' in repr(gd)
 
 
 def test_computed_quantities():
@@ -80,3 +83,11 @@ def test_cov():
 
     with pytest.raises(RuntimeError):
         gd.get_cov(RAM_threshold=1*u.kilobyte) # force failure
+
+
+def test_skycoord():
+    filename = get_pkg_data_filename('data/gdr2mock.fits')
+    gd = GaiaData(Table.read(filename))
+
+    c = gd.skycoord
+    assert len(c) == len(gd)

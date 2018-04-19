@@ -66,6 +66,7 @@ class GaiaData:
 
         # By this point, data should always be a DataFrame (for @smoh)
         self.data = data
+        self._has_rv = 'radial_velocity' in self.data
 
         # For caching later
         self._cov = None
@@ -119,18 +120,10 @@ class GaiaData:
         return len(self.data)
 
     def __str__(self):
-        # TODO:
-        infostr = 'ra'
-        infostr = '\n'.join([
-            # 'index    = %i' %(i),
-            'ra       = %s' % (self.ra),
-            'dec      = %s' % (self.dec),
-            'parallax = %s (snr = %.1f)' % (self.parallax, self.parallax_snr),
-            'pmra     = %s (snr = %.1f)' % (self.pmra, self.pmra/self.pmra_error),
-            'pmdec    = %s (snr = %.1f)' % (self.pmdec, self.pmdec/self.pmdec_error),
-            'dist vra vdec = %s %s' % (self.get_distance(), self.get_vtan()),
-        ])
-        return infostr
+        names = ['ra', 'dec', 'parallax', 'pmra', 'pmdec']
+        if self._has_rv:
+            names.append('radial_velocity')
+        return str(self.data[names])
 
     def __repr__(self):
         return "<GaiaData: {0:d} rows>".format(len(self))
@@ -227,7 +220,7 @@ class GaiaData:
             err = getattr(self, name + "_error")
             C[:, i, i] = err.to(units[name]).value ** 2
 
-        if 'radial_velocity_error' in self.data:
+        if self._has_rv:
             name = 'radial_velocity'
             err = getattr(self, name + "_error")
             C[:, 5, 5] = err.to(units[name]).value ** 2
@@ -257,7 +250,7 @@ class GaiaData:
         all coordinates. Note: this requires Astropy v3.0 or higher!
         """
         kw = dict()
-        if 'radial_velocity' in self.data:
+        if self._has_rv:
             kw['radial_velocity'] = self.radial_velocity
         return coord.SkyCoord(ra=self.ra, dec=self.dec,
                               distance=self.distance,
