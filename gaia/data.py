@@ -238,6 +238,10 @@ class GaiaData:
             name = 'radial_velocity'
             err = getattr(self, name + "_error")
             C[:, 5, 5] = err.to(units[name]).value ** 2
+        else:
+            C[:, 5, 5] = np.inf
+
+        C[:, 5, 5][np.isnan(C[:, 5, 5])] = np.inf # missing values
 
         for i, name1 in enumerate(names):
             for j, name2 in enumerate(names):
