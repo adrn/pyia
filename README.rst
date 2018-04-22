@@ -36,7 +36,7 @@ the `LICENSE <https://github.com/adrn/pyia/blob/master/LICENSE>`_ file.
    :target: http://travis-ci.org/adrn/pyia
 .. |License| image:: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
    :target: https://github.com/adrn/pyia/blob/master/LICENSE
-.. .. |Documentation Status| image:: https://readthedocs.org/projects/pyia/badge/?version=latest
-..    :target: http://pyia.readthedocs.io/en/latest/?badge=latest
+.. |Documentation Status| image:: https://readthedocs.org/projects/pyia/badge/?version=latest
+   :target: http://pyia.readthedocs.io/en/latest/?badge=latest
 .. |Affiliated package| image:: https://img.shields.io/badge/astropy-affiliated%20package-orange.svg
    :target: http://astropy.org/affiliated
