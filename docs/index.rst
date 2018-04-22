@@ -1,7 +1,7 @@
-.. _gaia:
+.. _pyia:
 
 ###################################################
-Gaia: a Python package for working with *Gaia* data
+pyia: a Python package for working with *Gaia* data
 ###################################################
 
 TODO: introduction
@@ -27,4 +27,4 @@ TODO
 API
 ***
 
-.. automodapi:: gaia.dr1
+.. automodapi:: pyia

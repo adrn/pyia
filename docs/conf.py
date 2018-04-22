@@ -114,7 +114,7 @@ release = package.__version__
 
 # Please update these texts to match the name of your package.
 html_theme_options = {
-    'logotext1': 'gaia',  # white,  semi-bold
+    'logotext1': 'pyia',  # white,  semi-bold
     'logotext2': '',  # orange, light
     'logotext3': ':docs'   # white,  light
     }
@@ -181,4 +181,4 @@ github_issues_url = 'https://github.com/{0}/issues/'.format(setup_cfg['github_pr
 
 # Static files to copy after template files
 html_static_path = ['_static']
-html_style = 'gaia.css'
+html_style = 'pyia.css'

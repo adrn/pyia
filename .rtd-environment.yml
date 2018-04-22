@@ -1,4 +1,4 @@
-name: gaia
+name: pyia
 
 channels:
   - astropy
@@ -9,4 +9,4 @@ dependencies:
   - numpy
   - cython
   - matplotlib
-
+  - pandas

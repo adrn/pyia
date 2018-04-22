@@ -4,9 +4,9 @@ include CHANGES.rst
 include ez_setup.py
 include ah_bootstrap.py
 include setup.cfg
-include gaia/tests/coveragerc
+include pyia/tests/coveragerc
 
-recursive-include gaia *.pyx *.c *.pxd
+recursive-include pyia *.pyx *.c *.pxd
 recursive-include docs *
 recursive-include licenses *
 recursive-include cextern *
