@@ -10,9 +10,6 @@ from astropy.table import Table
 import astropy.units as u
 import pandas as pd
 
-# Project
-from .utils import cached_property
-
 __all__ = ['GaiaData']
 
 
@@ -71,6 +68,7 @@ class GaiaData:
         # For caching later
         self._cov = None
         self._cov_units = None
+        self._coord = None
 
     @classmethod
     def from_query(cls, query_str, login_info=None):
@@ -261,16 +259,18 @@ class GaiaData:
     ##########################################################################
     # Astropy connections
     #
-    @cached_property
     def skycoord(self):
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
         """
-        kw = dict()
-        if self._has_rv:
-            kw['radial_velocity'] = self.radial_velocity
-        return coord.SkyCoord(ra=self.ra, dec=self.dec,
-                              distance=self.distance,
-                              pm_ra_cosdec=self.pmra,
-                              pm_dec=self.pmdec, **kw)
+        if self._coord is None:
+            kw = dict()
+            if self._has_rv:
+                kw['radial_velocity'] = self.radial_velocity
+            self._coord = coord.SkyCoord(ra=self.ra, dec=self.dec,
+                                         distance=self.distance,
+                                         pm_ra_cosdec=self.pmra,
+                                         pm_dec=self.pmdec, **kw)
+
+        return self._coord
