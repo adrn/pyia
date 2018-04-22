@@ -259,6 +259,7 @@ class GaiaData:
     ##########################################################################
     # Astropy connections
     #
+    @property
     def skycoord(self):
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
