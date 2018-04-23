@@ -2,12 +2,14 @@
 """ Data structures. """
 
 # Standard library
-import numpy as np
+from os import path
 
 # Third-party
 import astropy.coordinates as coord
+from astropy.io import fits
 from astropy.table import Table
 import astropy.units as u
+import numpy as np
 import pandas as pd
 
 __all__ = ['GaiaData']
@@ -26,7 +28,44 @@ gaia_unit_map = {
     'parallax_error': u.milliarcsecond,
     'pmra_error': u.milliarcsecond / u.year,
     'pmdec_error': u.milliarcsecond / u.year,
-    'radial_velocity_error': u.km / u.s
+    'radial_velocity_error': u.km / u.s,
+    'astrometric_excess_noise': u.mas,
+    'astrometric_weight_al': 1/u.mas**2,
+    'astrometric_pseudo_colour': 1/u.micrometer,
+    'astrometric_pseudo_colour_error': 1/u.micrometer,
+    'astrometric_sigma5d_max': u.mas,
+    'phot_g_mean_flux': u.photon/u.s,
+    'phot_g_mean_flux_error': u.photon/u.s,
+    'phot_g_mean_mag': u.mag,
+    'phot_bp_mean_flux': u.photon/u.s,
+    'phot_bp_mean_flux_error': u.photon/u.s,
+    'phot_bp_mean_mag': u.mag,
+    'phot_rp_mean_flux': u.photon/u.s,
+    'phot_rp_mean_flux_error': u.photon/u.s,
+    'phot_rp_mean_mag': u.mag,
+    'bp_rp': u.mag,
+    'bp_g': u.mag,
+    'g_rp': u.mag,
+    'rv_template_teff': u.K,
+    'l': u.degree,
+    'b': u.degree,
+    'ecl_lon': u.degree,
+    'ecl_lat': u.degree,
+    'teff_val': u.K,
+    'teff_percentile_lower': u.K,
+    'teff_percentile_upper': u.K,
+    'a_g_val': u.mag,
+    'a_g_percentile_lower': u.mag,
+    'a_g_percentile_upper': u.mag,
+    'e_bp_min_rp_val': u.mag,
+    'e_bp_min_rp_percentile_lower': u.mag,
+    'e_bp_min_rp_percentile_upper': u.mag,
+    'radius_val': u.Rsun,
+    'radius_percentile_lower': u.Rsun,
+    'radius_percentile_upper': u.Rsun,
+    'lum_val': u.Lsun,
+    'lum_percentile_lower': u.Lsun,
+    'lum_percentile_upper': u.Lsun,
 }
 
 
@@ -46,7 +85,7 @@ class GaiaData:
     def __init__(self, data):
         if not isinstance(data, Table) and not isinstance(data, pd.DataFrame):
             if isinstance(data, str):
-                if path.splitext(data)[1] is in ['.fit', '.fits']:
+                if path.splitext(data)[1] in ['.fit', '.fits']:
                     # For some reason, calling Table.read() on a fits file is
                     # way slower than using this! See:
                     # https://github.com/astropy/astropy/issues/7399
