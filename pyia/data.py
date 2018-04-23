@@ -46,7 +46,13 @@ class GaiaData:
     def __init__(self, data):
         if not isinstance(data, Table) and not isinstance(data, pd.DataFrame):
             if isinstance(data, str):
-                data = Table.read(data)
+                if path.splitext(data)[1] is in ['.fit', '.fits']:
+                    # For some reason, calling Table.read() on a fits file is
+                    # way slower than using this! See:
+                    # https://github.com/astropy/astropy/issues/7399
+                    data = Table(fits.getdata(data, 1))
+                else:
+                    data = Table.read(data)
 
             else:
                 # the dict-like object might have Quantity's, so we want to
