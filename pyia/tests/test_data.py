@@ -35,7 +35,11 @@ def test_slicing_getattr():
     gd = GaiaData(Table.read(filename))
 
     for k, unit in gaia_unit_map.items():
-        assert getattr(gd, k).unit == unit
+        if k in gd.data.columns:
+            # have to special case the flux columns:
+            if unit == u.ph/u.s:
+                continue
+            assert getattr(gd, k).unit == unit
 
     size = len(gd)
     gd_slc = gd[:4]
