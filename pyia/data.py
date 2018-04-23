@@ -37,15 +37,21 @@ class GaiaData:
 
     Parameters
     ----------
-    data : `astropy.table.Table`, `pandas.DataFrame`, dict_like
-        This must be pre-loaded data as any of the types listed above.
+    data : `astropy.table.Table`, `pandas.DataFrame`, dict_like, str
+        This must be pre-loaded data as any of the types listed above, or a
+        string filename containing a table that is readable by
+        `astropy.table.Table.read`.
     """
 
     def __init__(self, data):
         if not isinstance(data, Table) and not isinstance(data, pd.DataFrame):
-            # the dict-like object might have Quantity's, so we want to
-            # preserve any units
-            data = Table(data)
+            if isinstance(data, str):
+                data = Table.read(data)
+
+            else:
+                # the dict-like object might have Quantity's, so we want to
+                # preserve any units
+                data = Table(data)
 
         # Create a copy of the default unit map
         self.units = gaia_unit_map.copy()
