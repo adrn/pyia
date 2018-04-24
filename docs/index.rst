@@ -48,6 +48,13 @@ to use for examples below::
     >>> g
     <GaiaData: 100 rows>
 
+As mentioned above, you can also pass in pre-loaded data::
+
+    >>> from astropy.table import Table
+    >>> tbl = Table.read('docs/_static/gdr2mock.fits')
+    >>> GaiaData(tbl)
+    <GaiaData: 100 rows>
+
 With this object, we can access any of the Gaia table column names using
 attribute access. By using the attribute, we get back an
 `~astropy.units.Quantity` object with the correct units::
