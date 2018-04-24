@@ -186,4 +186,4 @@ html_style = 'pyia.css'
 
 # Add pandas to intersphinx mapping
 intersphinx_mapping['pandas'] = \
-    ('http://pandas-docs.github.io/pandas-docs-travis/', None)
+    ('https://pandas.pydata.org/pandas-docs/stable/', None)
