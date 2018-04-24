@@ -77,7 +77,7 @@ only the diagonal elements exist!)::
     >>> cov = g[:2].get_cov()
     >>> cov.shape
     (2, 6, 6)
-    >>> cov
+    >>> cov # doctest: +SKIP
     array([[[2.20150978e-13,            nan,            nan,            nan,
                     nan, 0.00000000e+00],
         [           nan, 1.44516248e-13,            nan,            nan,
@@ -90,7 +90,6 @@ only the diagonal elements exist!)::
          9.68711734e-01, 0.00000000e+00],
         [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
          0.00000000e+00,            inf]],
-
        [[1.54148517e-13,            nan,            nan,            nan,
                     nan, 0.00000000e+00],
         [           nan, 1.01189510e-13,            nan,            nan,
