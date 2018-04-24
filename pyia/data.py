@@ -146,7 +146,13 @@ class GaiaData:
             An instance of this object.
 
         """
-        from astroquery.gaia import Gaia
+        try:
+            from astroquery.gaia import Gaia
+        except ImportError:
+            raise ImportError('Failed to import astroquery. To use the '
+                              'from_query() classmethod, you must first'
+                              ' install astroquery, e.g., with pip: '
+                              '\n\tpip install astroquery')
 
         if login_info is not None:
             Gaia.login(**login_info)
