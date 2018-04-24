@@ -13,7 +13,7 @@ What ``pyia`` can do for you:
 * Create `~astropy.coordinates.SkyCoord` objects from Gaia data
   (`pyia.GaiaData.skycoord`),
 * Support for executing simple (small) remote queries via the Gaia science
-archive and automatically fetching results (`pyia.GaiaData.from_query()`).
+  archive and automatically fetching results (`pyia.GaiaData.from_query()`).
 
 ************
 Installation
