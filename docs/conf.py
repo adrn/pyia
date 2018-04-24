@@ -182,3 +182,8 @@ github_issues_url = 'https://github.com/{0}/issues/'.format(setup_cfg['github_pr
 # Static files to copy after template files
 html_static_path = ['_static']
 html_style = 'pyia.css'
+
+
+# Add pandas to intersphinx mapping
+intersphinx_mapping['pandas'] = \
+    ('http://pandas-docs.github.io/pandas-docs-travis/', None)
