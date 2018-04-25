@@ -4,6 +4,8 @@
 pyia: a Python package for working with *Gaia* data
 ###################################################
 
+Source code `on GitHub <https://github.com/adrn/pyia>`_.
+
 What ``pyia`` can do for you:
 
 * Provides access to Gaia data columns as `~astropy.units.Quantity` objects,
