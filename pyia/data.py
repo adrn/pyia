@@ -82,21 +82,22 @@ class GaiaData:
         `astropy.table.Table.read`.
     """
 
-    def __init__(self, data):
+    def __init__(self, data, memmap=True, copy=False):
         if not isinstance(data, Table) and not isinstance(data, pd.DataFrame):
             if isinstance(data, str):
-                if path.splitext(data)[1] in ['.fit', '.fits']:
-                    # For some reason, calling Table.read() on a fits file is
-                    # way slower than using this! See:
-                    # https://github.com/astropy/astropy/issues/7399
-                    data = Table(fits.getdata(data, 1))
-                else:
-                    data = Table.read(data)
+                # if path.splitext(data)[1] in ['.fit', '.fits']:
+                #     # For some reason, calling Table.read() on a fits file is
+                #     # way slower than using this! See:
+                #     # https://github.com/astropy/astropy/issues/7399
+                #     data = Table(fits.getdata(data, 1, memmap=memmap),
+                #                  copy=copy)
+                # else:
+                data = Table.read(data, memmap=memmap)
 
             else:
                 # the dict-like object might have Quantity's, so we want to
                 # preserve any units
-                data = Table(data)
+                data = Table(data, copy=copy)
 
         # Create a copy of the default unit map
         self.units = gaia_unit_map.copy()
@@ -322,13 +323,32 @@ class GaiaData:
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
         """
-        if self._coord is None:
-            kw = dict()
-            if self._has_rv:
-                kw['radial_velocity'] = self.radial_velocity
-            self._coord = coord.SkyCoord(ra=self.ra, dec=self.dec,
-                                         distance=self.distance,
-                                         pm_ra_cosdec=self.pmra,
-                                         pm_dec=self.pmdec, **kw)
+        return self.get_skycoord()
 
-        return self._coord
+    def get_skycoord(self, distance=None, radial_velocity=None):
+        """
+        Return an `~astropy.coordinates.SkyCoord` object to represent
+        all coordinates. Note: this requires Astropy v3.0 or higher!
+        """
+        # TODO: cache is disabled
+        # if self._coord is None:
+
+        kw = dict()
+        if self._has_rv:
+            kw['radial_velocity'] = self.radial_velocity
+
+        if radial_velocity is not False and radial_velocity is not None:
+            kw['radial_velocity'] = radial_velocity
+        elif radial_velocity is False and 'radial_velocity' in kw:
+            kw.pop('radial_velocity')
+
+        if distance is None:
+            kw['distance'] = self.distance
+        elif distance is not False and distance is not None:
+            kw['distance'] = distance
+
+        _coord = coord.SkyCoord(ra=self.ra, dec=self.dec,
+                                pm_ra_cosdec=self.pmra,
+                                pm_dec=self.pmdec, **kw)
+
+        return _coord
