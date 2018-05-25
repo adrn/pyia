@@ -8,31 +8,30 @@ from astropy.table import Table
 import astropy.coordinates as coord
 import astropy.units as u
 from astropy.utils.data import get_pkg_data_filename
-import pandas as pd
 import pytest
 
 # Project
 from ..data import GaiaData, gaia_unit_map
 
-@pytest.mark.parametrize('filename', [
-    get_pkg_data_filename('data/gdr2mock.fits'),
-    get_pkg_data_filename('data/gdr2mock_unitless.fits'),
-    get_pkg_data_filename('data/gdr2mock.votable')
+@pytest.mark.parametrize('filename,fmt', [
+    (get_pkg_data_filename('data/gdr2_sm.fits'), 'fits'),
+    (get_pkg_data_filename('data/gdr2_sm.vot'), 'votable')
 ])
-def test_init(filename):
+def test_init(filename, fmt):
     """Test initializing the GaiaData class with different options"""
 
     if 'fits' in path.splitext(filename)[1]:
         gd = GaiaData(fits.getdata(filename, 1))
-        assert isinstance(gd.data, pd.DataFrame)
+        assert isinstance(gd.data, Table)
 
-    gd = GaiaData(Table.read(filename))
-    gd = GaiaData(Table.read(filename).to_pandas())
+    print(filename)
+    gd = GaiaData(Table.read(filename, format=fmt))
+    gd = GaiaData(filename, format=fmt)
 
 
 def test_slicing_getattr():
-    filename = get_pkg_data_filename('data/gdr2mock.fits')
-    gd = GaiaData(Table.read(filename))
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
+    gd = GaiaData(filename)
 
     for k, unit in gaia_unit_map.items():
         if k in gd.data.columns:
@@ -52,18 +51,18 @@ def test_slicing_getattr():
     assert 'source_id' in dir(gd)
     gd.source_id
     gd.parallax
-    gd.ra_dec_corr
+    gd.a_g_val
 
 
 def test_str_repr():
-    filename = get_pkg_data_filename('data/gdr2mock.fits')
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
     gd = GaiaData(Table.read(filename))
     assert 'GaiaData' in repr(gd)
     assert '100 rows' in repr(gd)
 
 
 def test_computed_quantities():
-    filename = get_pkg_data_filename('data/gdr2mock.fits')
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
     gd = GaiaData(Table.read(filename))
 
     assert gd.pm.unit == u.mas/u.yr
@@ -79,7 +78,7 @@ def test_computed_quantities():
 
 
 def test_cov():
-    filename = get_pkg_data_filename('data/gdr2mock.fits')
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
     gd = GaiaData(Table.read(filename))
 
     C = gd.get_cov()
@@ -90,11 +89,32 @@ def test_cov():
 
 
 def test_skycoord():
-    filename = get_pkg_data_filename('data/gdr2mock.fits')
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
     gd = GaiaData(Table.read(filename))
 
     c = gd.skycoord
     assert len(c) == len(gd)
+
+
+def test_setattr():
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
+    tbl = Table.read(filename)
+    tbl['arr_column'] = np.arange(len(tbl)) * 10.
+    gd = GaiaData(tbl)
+
+    # Setting a quantity column
+    with pytest.raises(ValueError):
+        gd.parallax = np.arange(len(gd))
+
+    new_vals = np.arange(len(gd)) * u.microarcsecond
+    gd.parallax = new_vals
+    assert np.all(np.asarray(gd.data['parallax']) == new_vals.value)
+    assert gd.parallax.unit == u.microarcsecond
+
+    # Setting an array column
+    new_vals = np.arange(len(gd))
+    gd.arr_column = new_vals
+    assert np.all(gd.data['arr_column'] == new_vals)
 
 
 @pytest.mark.remote_data

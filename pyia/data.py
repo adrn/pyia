@@ -7,7 +7,7 @@ from os import path
 # Third-party
 import astropy.coordinates as coord
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, Column
 import astropy.units as u
 import numpy as np
 import pandas as pd
@@ -82,36 +82,32 @@ class GaiaData:
         `astropy.table.Table.read`.
     """
 
-    def __init__(self, data, memmap=True, copy=False):
-        if not isinstance(data, Table) and not isinstance(data, pd.DataFrame):
+    def __init__(self, data, **kwargs):
+        if not isinstance(data, Table):
             if isinstance(data, str):
-                # if path.splitext(data)[1] in ['.fit', '.fits']:
-                #     # For some reason, calling Table.read() on a fits file is
-                #     # way slower than using this! See:
-                #     # https://github.com/astropy/astropy/issues/7399
-                #     data = Table(fits.getdata(data, 1, memmap=memmap),
-                #                  copy=copy)
-                # else:
-                data = Table.read(data, memmap=memmap)
+                data = Table.read(data, **kwargs)
 
             else:
                 # the dict-like object might have Quantity's, so we want to
                 # preserve any units
-                data = Table(data, copy=copy)
+                data = Table(data, **kwargs)
+
+        # HACK and JFC: make sure table isn't masked
+        if data.masked:
+            cols = []
+            for c in data.colnames:
+                col = data[c]
+                col.mask = None
+                cols.append(Column(col))
+            data = Table(cols)
 
         # Create a copy of the default unit map
         self.units = gaia_unit_map.copy()
 
-        if isinstance(data, Table):
-            # Modify unit dict if the input object has custom units:
-            for name in data.columns:
-                # Have to do the extra check on UnrecognizedUnit because the
-                # following `not in` fails when the unit is not recognized
-                if (hasattr(data[name], 'unit') and
-                        not isinstance(data[name].unit, u.UnrecognizedUnit) and
-                        data[name].unit not in (None, u.one)):
-                    self.units[name] = data[name].unit
-            data = data.to_pandas()
+        # Update the unit map with the table units
+        for c in data.colnames:
+            if data[c].unit is not None:
+                self.units[c] = u.Unit(data[c].unit)
 
         # By this point, data should always be a DataFrame (for @smoh)
         self.data = data
@@ -173,10 +169,30 @@ class GaiaData:
             raise AttributeError()
 
         if name in self.units:
-            return self.data[name].values * self.units[name]
+            return np.asarray(self.data[name]) * self.units[name]
 
         else:
             return self.data[name]
+
+    def __setattr__(self, name, val):
+
+        if name in ['data', 'units']:
+            # needs to be here to catch the first time we enter this func.
+            super().__setattr__(name, val)
+
+        elif name in self.units:
+            if not hasattr(val, 'unit'):
+                raise ValueError('To set data for column "{0}", you must '
+                                 'provide a Quantity-like object (with units).'
+                                 .format(name))
+            self.data[name] = val
+            self.units[name] = val.unit
+
+        elif name in self.data.columns:
+            self.data[name] = val
+
+        else:
+            super().__setattr__(name, val)
 
     def __dir__(self):
         return super().__dir__() + [str(k) for k in self.data.columns]
@@ -184,7 +200,7 @@ class GaiaData:
     def __getitem__(self, slc):
         if isinstance(slc, int):
             slc = slice(slc, slc+1)
-        return self.__class__(self.data.iloc[slc])
+        return self.__class__(self.data[slc])
 
     def __len__(self):
         return len(self.data)

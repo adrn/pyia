@@ -40,20 +40,19 @@ or by executing a remote query with `~pyia.GaiaData.from_query()`.
 
 If you've already downloaded some Gaia data in tabular format and saved it to a
 file on disk, you can create an instance by passing the path to the file. As an
-example, I've created a small subset of `Gaia DR2 mock data
-<http://dc.zah.uni-heidelberg.de/__system__/dc_tables/show/tableinfo/gdr2mock.main>`_
-to use for examples below::
+example, I've created a small subset of Gaia DR2 data downloaded from the
+Gaia science archive to use for examples below::
 
     >>> import astropy.units as u
     >>> from pyia import GaiaData
-    >>> g = GaiaData('docs/_static/gdr2mock.fits')
+    >>> g = GaiaData('docs/_static/gdr2_sm.fits')
     >>> g
     <GaiaData: 100 rows>
 
 As mentioned above, you can also pass in pre-loaded data::
 
     >>> from astropy.table import Table
-    >>> tbl = Table.read('docs/_static/gdr2mock.fits')
+    >>> tbl = Table.read('docs/_static/gdr2_sm.fits')
     >>> GaiaData(tbl)
     <GaiaData: 100 rows>
 
@@ -61,15 +60,15 @@ With this object, we can access any of the Gaia table column names using
 attribute access. By using the attribute, we get back an
 `~astropy.units.Quantity` object with the correct units::
 
-    >>> g.parallax[:4]
-    <Quantity [0.167184 , 0.134295 , 0.23638  , 0.0976651] marcsec>
-    >>> g.phot_g_mean_mag[:4]
-    <Quantity [20.6775, 20.4755, 19.6778, 20.4051] mag>
+    >>> g.parallax[:4] # doctest: +FLOAT_CMP
+    <Quantity [0.37942248, 0.12635312, 0.29292803, 0.62822535] mas>
+    >>> g.phot_g_mean_mag[:4] # doctest: +FLOAT_CMP
+    <Quantity [18.38548 , 19.645763, 18.432325, 19.573648] mag>
 
-To access the raw data (stored internally as a Pandas `~pandas.DataFrame`), you can use the ``.data`` attribute::
+To access the raw data (stored internally as an Astropy `~astropy.table.Table`), you can use the ``.data`` attribute::
 
     >>> type(g.data)
-    <class 'pandas.core.frame.DataFrame'>
+    <class 'astropy.table.table.Table'>
 
 The `~pyia.GaiaData` object supports indexing and slicing like normal Python lists / Numpy arrays / Astropy tables::
 
@@ -87,64 +86,63 @@ only the diagonal elements exist!)::
     >>> cov.shape
     (2, 6, 6)
     >>> cov # doctest: +SKIP
-    array([[[2.20150978e-13,            nan,            nan,            nan,
-                    nan, 0.00000000e+00],
-        [           nan, 1.44516248e-13,            nan,            nan,
-                    nan, 0.00000000e+00],
-        [           nan,            nan, 4.61578083e+00,            nan,
-                    nan, 0.00000000e+00],
-        [           nan,            nan,            nan, 1.43958020e+00,
-                    nan, 0.00000000e+00],
-        [           nan,            nan,            nan,            nan,
-         9.68711734e-01, 0.00000000e+00],
-        [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
-         0.00000000e+00,            inf]],
-       [[1.54148517e-13,            nan,            nan,            nan,
-                    nan, 0.00000000e+00],
-        [           nan, 1.01189510e-13,            nan,            nan,
-                    nan, 0.00000000e+00],
-        [           nan,            nan, 3.23194528e+00,            nan,
-                    nan, 0.00000000e+00],
-        [           nan,            nan,            nan, 1.00798643e+00,
-                    nan, 0.00000000e+00],
-        [           nan,            nan,            nan,            nan,
-         6.78286731e-01, 0.00000000e+00],
-        [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
-         0.00000000e+00,            inf]]])
+    array([[[ 1.11300727e-15,  3.39476922e-17,  6.32569989e-10,
+             -1.83063606e-09, -3.14384117e-10,  0.00000000e+00],
+            [ 3.39476922e-17,  1.24216618e-15,  1.47796850e-09,
+             -3.26525998e-10, -3.24502195e-09,  0.00000000e+00],
+            [ 6.32569989e-10,  1.47796850e-09,  2.06969264e-02,
+             -3.80907519e-03, -3.41596832e-03,  0.00000000e+00],
+            [-1.83063606e-09, -3.26525998e-10, -3.80907519e-03,
+              6.94569085e-02, -9.45256223e-03,  0.00000000e+00],
+            [-3.14384117e-10, -3.24502195e-09, -3.41596832e-03,
+             -9.45256223e-03,  5.71660391e-02,  0.00000000e+00],
+            [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+              0.00000000e+00,  0.00000000e+00,             inf]],
+
+           [[ 7.09961079e-15,  5.03257689e-16,  5.48053482e-09,
+             -1.17483063e-08, -2.40896552e-09,  0.00000000e+00],
+            [ 5.03257689e-16,  1.06594795e-14,  1.24732958e-08,
+             -3.91322912e-11, -3.50557367e-08,  0.00000000e+00],
+            [ 5.48053482e-09,  1.24732958e-08,  1.60209695e-01,
+              2.21121108e-02,  2.88825197e-02,  0.00000000e+00],
+            [-1.17483063e-08, -3.91322912e-11,  2.21121108e-02,
+              5.30656499e-01, -6.01228583e-02,  0.00000000e+00],
+            [-2.40896552e-09, -3.50557367e-08,  2.88825197e-02,
+             -6.01228583e-02,  5.71332641e-01,  0.00000000e+00],
+            [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+              0.00000000e+00,  0.00000000e+00,             inf]]])
 
 By default, the returned units are: (deg, deg, milliarcsecond,
 milliarcsecond/year, milliarcsecond/year, km/s), but these can be changed by
 passing in a dictionary with the new desired units::
 
     >>> cov2 = g[:2].get_cov(units=dict(ra=u.radian, dec=u.radian))
-    >>> cov[0, 0, 0] # doctest: +FLOAT_CMP
+    >>> cov[0, 0, 2] # doctest: +FLOAT_CMP
     2.201509780681496e-13
-    >>> cov2[0, 0, 0] # doctest: +FLOAT_CMP
+    >>> cov2[0, 0, 2] # doctest: +FLOAT_CMP
     6.70618285130544e-17
 
 We can also retrieve other useful quantities from this object, like a 2D proper
 motion array with units (as a `~astropy.units.Quantity`)::
 
-    >>> g[:4].pm
-    <Quantity [[-0.26951  ,  0.0829121],
-               [-0.618642 , -5.09182  ],
-               [-3.29806  , -1.31502  ],
-               [-4.84104  , -8.83496  ]] marcsec / yr>
+    >>> g[:4].pm # doctest: +FLOAT_CMP
+    <Quantity [[-4.24880717, -4.52180435],
+               [ 1.90317677, -3.80754094],
+               [-2.89919833, -3.87763849],
+               [-4.62431593, -2.00130269]] mas / yr>
 
 Finally, we can retrieve a `~astropy.coordinates.SkyCoord` object for all rows::
 
     >>> c = g.skycoord
-    >>> c[:4]
+    >>> c[:4] # doctest: +FLOAT_CMP
     <SkyCoord (ICRS): (ra, dec, distance) in (deg, deg, pc)
-        [(265.74811032, -36.35797425,  5981.43359375),
-         (265.74947102, -36.36186489,  7446.29394531),
-         (265.74951857, -36.36185265,  4230.4765625 ),
-         (265.75036833, -36.36044967, 10239.07226562)]
-     (pm_ra_cosdec, pm_dec, radial_velocity) in (mas / yr, mas / yr, km / s)
-        [(-0.26951 ,  0.0829121, -134.197  ),
-         (-0.618642, -5.09182  , -233.08   ),
-         (-3.29806 , -1.31502  ,    4.73733),
-         (-4.84104 , -8.83496  ,  -63.567  )]>
+        [(321.33207659, 50.18344643, 2635.58449057),
+          (322.35324537, 50.63947336, 7914.32760316),
+          (322.13767285, 50.36279294, 3413.80786286),
+          (322.10360875, 50.62762822, 1591.7854934 )]
+      (pm_ra_cosdec, pm_dec) in mas / yr
+         [(-4.24880717, -4.52180435), ( 1.90317677, -3.80754094),
+          (-2.89919833, -3.87763849), (-4.62431593, -2.00130269)]>
 
 But note that this computes the distance using 1/parallax.
 
