@@ -111,7 +111,7 @@ class GaiaData:
 
         # By this point, data should always be a DataFrame (for @smoh)
         self.data = data
-        self._has_rv = 'radial_velocity' in self.data
+        self._has_rv = 'radial_velocity' in self.data.colnames
 
         # For caching later
         self._cov = None
