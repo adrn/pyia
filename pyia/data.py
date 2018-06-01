@@ -104,13 +104,18 @@ class GaiaData:
         # Create a copy of the default unit map
         self.units = gaia_unit_map.copy()
 
+        # Store the source table
+        self.data = data
+
         # Update the unit map with the table units
+        self._invalid_units = dict()
         for c in data.colnames:
             if data[c].unit is not None:
-                self.units[c] = u.Unit(data[c].unit)
+                try:
+                    self.units[c] = u.Unit(str(data[c].unit))
+                except ValueError:
+                    self._invalid_units[c] = data[c].unit
 
-        # By this point, data should always be a DataFrame (for @smoh)
-        self.data = data
         self._has_rv = 'radial_velocity' in self.data.colnames
 
         # For caching later
