@@ -308,8 +308,11 @@ class GaiaData:
 
         # pre-load the diagonal
         for i, name in enumerate(names):
-            err = getattr(self, name + "_error")
-            C[:, i, i] = err.to(units[name]).value ** 2
+            if name + "_error" in self.data.colnames:
+                err = getattr(self, name + "_error")
+                C[:, i, i] = err.to(units[name]).value ** 2
+            else:
+                C[:, i, i] = np.nan
 
         if self._has_rv:
             name = 'radial_velocity'
@@ -325,7 +328,10 @@ class GaiaData:
                 if j <= i:
                     continue
 
-                corr = getattr(self, "{0}_{1}_corr".format(name1, name2))
+                if "{0}_{1}_corr".format(name1, name2) in self.data.colnames:
+                    corr = getattr(self, "{0}_{1}_corr".format(name1, name2))
+                else:
+                    corr = np.nan
 
                 # We don't need to worry about units here because the diagonal
                 # values have already been converted
