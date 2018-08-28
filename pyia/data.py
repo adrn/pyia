@@ -7,6 +7,8 @@ from astropy.table import Table, Column
 import astropy.units as u
 import numpy as np
 
+from .extinction import get_ext
+
 __all__ = ['GaiaData']
 
 
@@ -333,11 +335,67 @@ class GaiaData:
 
         return self._cache['cov']
 
-    def get_ebv():
-        pass
+    def get_ebv(self, dustmaps_cls=None):
+        """Compute the E(B-V) reddening at this location
 
-    def get_ext():
-        pass
+        This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
+        to run!
+
+        Parameters
+        ----------
+        dustmaps_cls : ``dustmaps`` query class
+            By default, ``SFDQuery``.
+        """
+        if dustmaps_cls is None:
+            from dustmaps.sfd import SFDQuery
+            dustmaps_cls = SFDQuery
+
+        c = self.get_skycoord(distance=False)
+        return dustmaps_cls().query(c)
+
+    def get_ext(self, dustmaps_cls=None):
+        """Compute the E(B-V) reddening at this location
+
+        This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
+        to run!
+
+        Parameters
+        ----------
+        dustmaps_cls : ``dustmaps`` query class
+            By default, ``SFDQuery``.
+
+        Returns
+        -------
+        A_G
+        A_BP
+        A_RP
+        """
+        if 'A_G' not in self._cache:
+            EBV = self.get_ebv(dustmaps_cls=dustmaps_cls)
+            A_G, A_B, A_R = get_ext(self.phot_g_mean_mag.value,
+                                    self.phot_bp_mean_mag.value,
+                                    self.phot_rp_mean_mag.value,
+                                    EBV)
+
+            self._cache['A_G'] = A_G * u.mag
+            self._cache['A_B'] = A_B * u.mag
+            self._cache['A_R'] = A_R * u.mag
+
+        return (self._cache['A_G'],
+                self._cache['A_B'],
+                self._cache['A_R'])
+
+    def get_G0(self):
+        A, _, _ = self.get_ext()
+        return self.phot_g_mean_mag - A
+
+    def get_BP0(self):
+        _, A, _ = self.get_ext()
+        return self.phot_bp_mean_mag - A
+
+    def get_RP0(self):
+        _, _, A = self.get_ext()
+        return self.phot_rp_mean_mag - A
 
     ##########################################################################
     # Astropy connections
