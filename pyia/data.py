@@ -1,16 +1,11 @@
 # coding: utf-8
 """ Data structures. """
 
-# Standard library
-from os import path
-
 # Third-party
 import astropy.coordinates as coord
-from astropy.io import fits
 from astropy.table import Table, Column
 import astropy.units as u
 import numpy as np
-import pandas as pd
 
 __all__ = ['GaiaData']
 
@@ -119,9 +114,7 @@ class GaiaData:
         self._has_rv = 'radial_velocity' in self.data.colnames
 
         # For caching later
-        self._cov = None
-        self._cov_units = None
-        self._coord = None
+        self._cache = dict()
 
     @classmethod
     def from_query(cls, query_str, login_info=None):
@@ -274,6 +267,10 @@ class GaiaData:
             specified threshold. Set to ``None`` to disable this checking.
         """
 
+        if 'cov' in self._cache:
+            if units == self._cache['cov_units']:
+                return self._cache['cov']
+
         if RAM_threshold is not None:
             # Raise error if the user is going to blow up their RAM
             estimated_RAM = 6 * 6 * len(self) * 8*u.bit
@@ -291,13 +288,6 @@ class GaiaData:
         units.setdefault('pmra', u.mas/u.yr)
         units.setdefault('pmdec', u.mas/u.yr)
         units.setdefault('radial_velocity', u.km/u.s)
-
-        # Use cached property if it exists
-        if self._cov is not None and self._cov_units is not None:
-            unit_check = [units[k] == self._cov_units[k] for k in units]
-            if all(unit_check):
-                return self._cov
-        self._cov_units = units
 
         # The full returned matrix
         C = np.zeros((len(self), 6, 6))
@@ -338,8 +328,16 @@ class GaiaData:
                 C[:, i, j] = corr * np.sqrt(C[:, i, i] * C[:, j, j])
                 C[:, j, i] = C[:, i, j]
 
-        self._cov = C
-        return self._cov
+        self._cache['cov'] = C
+        self._cache['cov_units'] = units
+
+        return self._cache['cov']
+
+    def get_ebv():
+        pass
+
+    def get_ext():
+        pass
 
     ##########################################################################
     # Astropy connections
@@ -357,8 +355,16 @@ class GaiaData:
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
         """
-        # TODO: cache is disabled
-        # if self._coord is None:
+
+        _coord_opts = (distance, radial_velocity)
+        if 'coord' in self._cache:
+            try:
+                _check = self._cache['coord_opts'] == _coord_opts
+            except ValueError: # array passed in for distance or radial_velocity
+                _check = False
+
+            if _check:
+                return self._cache['coord']
 
         kw = dict()
         if self._has_rv:
@@ -374,8 +380,9 @@ class GaiaData:
         elif distance is not False and distance is not None:
             kw['distance'] = distance
 
-        _coord = coord.SkyCoord(ra=self.ra, dec=self.dec,
-                                pm_ra_cosdec=self.pmra,
-                                pm_dec=self.pmdec, **kw)
+        self._cache['coord'] = coord.SkyCoord(ra=self.ra, dec=self.dec,
+                                              pm_ra_cosdec=self.pmra,
+                                              pm_dec=self.pmdec, **kw)
+        self._cache['coord_opts'] = _coord_opts
 
-        return _coord
+        return self._cache['coord']
