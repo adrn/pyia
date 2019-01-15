@@ -93,10 +93,11 @@ class GaiaData:
         if data.masked:
             cols = []
             for c in data.colnames:
+
                 col = data[c]
                 col.mask = None
                 cols.append(Column(col))
-            data = Table(cols)
+            data = Table(cols, copy=False)
 
         # Create a copy of the default unit map
         self.units = gaia_unit_map.copy()
