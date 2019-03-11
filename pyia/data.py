@@ -227,7 +227,11 @@ class GaiaData:
     @property
     def distance(self):
         """Assumes 1/parallax. Has shape `(nrows,)`"""
-        return coord.Distance(parallax=self.parallax)
+        # Clip to positive values (1e-3 mas = 1 Mpc)
+        clip = (~np.isfinite(self.parallax)) | (self.parallax < 1.e-3*u.mas)
+        parallax_clip = self.parallax*1.
+        parallax_clip[clip] = 1.e-3*u.mas        
+        return coord.Distance(parallax=parallax_clip)
 
     @property
     def distmod(self):
@@ -414,7 +418,8 @@ class GaiaData:
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
         """
-
+        import astropy.time
+        
         _coord_opts = (distance, radial_velocity)
         if 'coord' in self._cache:
             try:
@@ -427,8 +432,18 @@ class GaiaData:
 
         kw = dict()
         if self._has_rv:
-            kw['radial_velocity'] = self.radial_velocity
-
+            # Fill nans with zeros
+            fill = ~np.isfinite(self.radial_velocity)
+            rv = self.radial_velocity*1
+            rv[fill] = 0*u.km/u.s
+            
+            kw['radial_velocity'] = rv
+            
+        # Reference epoch (2015.5 for DR2, could change in future)
+        obstime = astropy.time.Time(self.ref_epoch.value,
+                                    format='decimalyear')
+        kw['obstime'] = obstime
+        
         if radial_velocity is not False and radial_velocity is not None:
             kw['radial_velocity'] = radial_velocity
         elif radial_velocity is False and 'radial_velocity' in kw:
