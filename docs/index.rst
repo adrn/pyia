@@ -211,9 +211,8 @@ Most of these uncertainties are less than 1-2 km/s! These take into account the
 parallax, proper motion, and radial velocity uncertainties provided by Gaia.
 
 
-***
 API
-***
+===
 
 .. automodapi:: pyia
     :no-inheritance-diagram:
