@@ -197,7 +197,7 @@ for each of these sources:
 And finally, let's compute (from the error samples) the uncertainty on the total
 velocity for these sources:
 
-
+    >>> import numpy as np
     >>> err_v = np.std(v, axis=1)
     >>> err_v # doctest: +FLOAT_CMP
     <Quantity [1.34468499, 0.84924219, 0.8439712 , 0.51272844, 0.56964407,
