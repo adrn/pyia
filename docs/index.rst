@@ -168,7 +168,7 @@ First, let's load the data:
 
 All of these sources have measured radial velocities:
 
-    >>> g_rv.radial_velocity # doctest: +FLOAT_CMP
+    >>> g_rv.radial_velocity[:4] # doctest: +FLOAT_CMP
     <Quantity [  7.89796709,  30.88496542,   3.04709697, -34.91701273] km / s>
 
 Let's now select only nearby (within 500 pc) sources:
