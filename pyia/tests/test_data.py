@@ -124,3 +124,19 @@ def test_from_query():
     gd = GaiaData.from_query(q)
 
     assert len(gd) == 10
+
+
+def test_get_samples():
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
+    gd = GaiaData(Table.read(filename))
+
+    g_samples = gd.get_error_samples(size=16)
+    assert g_samples.ra.shape == (len(gd), 16)
+    assert g_samples.dec.shape == (len(gd), 16)
+    assert g_samples.parallax.shape == (len(gd), 16)
+    assert g_samples.pmra.shape == (len(gd), 16)
+    assert g_samples.pmdec.shape == (len(gd), 16)
+    assert g_samples.radial_velocity.shape == (len(gd), 16)
+
+    c = g_samples.get_skycoord(distance=False)
+    assert c.shape == (100, 16)
