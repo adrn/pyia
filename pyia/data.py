@@ -446,7 +446,7 @@ class GaiaData:
 
         return self._cache['coord']
 
-    def get_error_samples(self, size=1):
+    def get_error_samples(self, size=1, rnd=None):
         """Generate a sampling from the Gaia error distribution for each source.
 
         This function constructs the astrometric covariance matrix for each
@@ -460,11 +460,19 @@ class GaiaData:
         ----------
         size : int
             The number of random samples per soure to generate.
+        rnd : ``numpy.random.RandomState``, optional
+            The random state.
 
         Returns
         -------
+        g_samples : `pyia.GaiaData`
+            The same data table, but now each Gaia coordinate entry contains
+            samples from the error distribution.
 
         """
+        if rnd is None:
+            rnd = np.random.RandomState()
+
         C = self.get_cov().copy()
         rv_mask = ~np.isfinite(C[:, 5, 5])
         C[rv_mask, 5, 5] = 0.
@@ -474,7 +482,7 @@ class GaiaData:
             arrs.append(getattr(self, k).to_value(unit))
         y = np.stack(arrs).T
 
-        samples = np.array([np.random.multivariate_normal(y[i], C[i], size=size)
+        samples = np.array([rnd.multivariate_normal(y[i], C[i], size=size)
                             for i in range(len(y))])
 
         d = self.data.copy()

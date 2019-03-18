@@ -179,7 +179,9 @@ To generate samples from the error distribution, we use the
 ``.get_error_samples()`` method, and pass in the number of samples to generate
 (here, 256):
 
-    >>> g_samples = g_rv.get_error_samples(size=256)
+    >>> import numpy as np
+    >>> g_samples = g_rv.get_error_samples(size=256,
+    ...                                    rnd=np.random.RandomState(seed=42))
 
 Let's now get a ``SkyCoord`` object to represent the data for these sources and
 samples, and transform to a Galactocentric coordinate frame using the Astropy
@@ -197,14 +199,13 @@ for each of these sources:
 And finally, let's compute (from the error samples) the uncertainty on the total
 velocity for these sources:
 
-    >>> import numpy as np
     >>> err_v = np.std(v, axis=1)
     >>> err_v # doctest: +FLOAT_CMP
-    <Quantity [1.34468499, 0.84924219, 0.8439712 , 0.51272844, 0.56964407,
-               5.09773664, 0.49509594, 0.38900574, 0.12777623, 0.33003514,
-               0.90980165, 1.55980192, 0.10561152, 2.24834014, 0.23978129,
-               0.08849996, 0.60940975, 0.66246121, 0.72935829, 0.73371712,
-               1.39479966, 1.98871529, 1.67979077, 1.22117557] km / s>
+    <Quantity [1.19954161, 0.90144356, 0.75698667, 0.57958176, 0.56774611,
+               4.99734449, 0.56438114, 0.40384664, 0.1379816 , 0.3842376 ,
+               1.03997745, 1.70031226, 0.10332231, 2.6339568 , 0.22981709,
+               0.08669366, 0.63096227, 0.65236441, 0.7876732 , 0.84191475,
+               1.26240366, 2.13720038, 1.76550184, 1.14999745] km / s>
 
 Most of these uncertainties are less than 1-2 km/s! These take into account the
 parallax, proper motion, and radial velocity uncertainties provided by Gaia.
