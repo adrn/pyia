@@ -141,8 +141,8 @@ Finally, we can retrieve a `~astropy.coordinates.SkyCoord` object for all rows::
          (322.13767285, 50.36279294, 3413.80786286),
          (322.10360875, 50.62762822, 1591.7854934 )]
      (pm_ra_cosdec, pm_dec, radial_velocity) in (mas / yr, mas / yr, km / s)
-        [(-4.24880717, -4.52180435, 0.), ( 1.90317677, -3.80754094, 0.),
-         (-2.89919833, -3.87763849, 0.), (-4.62431593, -2.00130269, 0.)]>
+        [(-4.24880717, -4.52180435, nan), ( 1.90317677, -3.80754094, nan),
+         (-2.89919833, -3.87763849, nan), (-4.62431593, -2.00130269, nan)]>
 
 But note that this computes the distance using 1/parallax.
 
