@@ -227,16 +227,25 @@ class GaiaData:
         _u = self.pmra.unit
         return np.vstack((self.pmra.value, self.pmdec.to(_u).value)).T * _u
     
-    @u.quantity_input(clip_value=u.mas, equivalencies=u.parallax())
-    def get_distance(self, clip_value=None):
+    @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
+    def get_distance(self, min_parallax=None, allow_negative=True):
+        """
+        Compute distance from parallax using `~astropy.coordinates.Distance`.
+        
+        If `min_parallax` supplied, then the parallaxes are clipped to this
+        values (and it is also used to replace NaNs).
+        
+        `allow_negative` is passed through to `~astropy.coordinates.Distance`.
+        """
+        
         plx = self.parallax.copy()
 
-        if clip_value is not None:
-            clipped = plx < clip_value.to(plx.unit, u.parallax())
+        if min_parallax is not None:
+            clipped = plx < min_parallax.to(plx.unit, u.parallax())
             clipped |= ~np.isfinite(plx)
-            plx[clipped] = clip_value.to(plx.unit, u.parallax())
+            plx[clipped] = min_parallax.to(plx.unit, u.parallax())
 
-        return coord.Distance(parallax=plx, allow_negative=True)                  
+        return coord.Distance(parallax=plx, allow_negative=allow_negative)                  
 
     @property
     def distance(self):
