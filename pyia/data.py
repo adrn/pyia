@@ -440,6 +440,10 @@ class GaiaData:
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
+        
+        `ref_epoch` is used to set the `obstime` attribute on the coordinate
+        objects.  This is often included in the DR2 tables, but `ref_epoch`
+        here is used if it's not. 
         """        
         _coord_opts = (distance, radial_velocity)
         if 'coord' in self._cache:
