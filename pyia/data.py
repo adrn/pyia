@@ -228,7 +228,7 @@ class GaiaData:
         return np.vstack((self.pmra.value, self.pmdec.to(_u).value)).T * _u
     
     @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
-    def get_distance(self, min_parallax=None, allow_negative=True):
+    def get_distance(self, min_parallax=None, allow_negative=False):
         """
         Compute distance from parallax using `~astropy.coordinates.Distance`.
         
