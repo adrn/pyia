@@ -4,6 +4,7 @@
 # Third-party
 import astropy.coordinates as coord
 from astropy.table import Table, Column
+from astropy.time import Time
 import astropy.units as u
 import numpy as np
 
@@ -63,6 +64,7 @@ gaia_unit_map = {
     'lum_val': u.Lsun,
     'lum_percentile_lower': u.Lsun,
     'lum_percentile_upper': u.Lsun,
+    'ref_epoch':u.year
 }
 
 
@@ -80,6 +82,7 @@ class GaiaData:
     """
 
     def __init__(self, data, **kwargs):
+        
         if not isinstance(data, Table):
             if isinstance(data, str):
                 data = Table.read(data, **kwargs)
@@ -88,7 +91,7 @@ class GaiaData:
                 # the dict-like object might have Quantity's, so we want to
                 # preserve any units
                 data = Table(data, **kwargs)
-
+                
         # HACK and JFC: make sure table isn't masked
         if data.masked:
             cols = []
@@ -223,12 +226,36 @@ class GaiaData:
         """2D proper motion. Has shape `(nrows, 2)`"""
         _u = self.pmra.unit
         return np.vstack((self.pmra.value, self.pmdec.to(_u).value)).T * _u
+    
+    @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
+    def get_distance(self, min_parallax=None, allow_negative=False):
+        """
+        Compute distance from parallax using `~astropy.coordinates.Distance`.
+        
+        If `min_parallax` supplied, then the parallaxes are clipped to this
+        values (and it is also used to replace NaNs).
+        
+        `allow_negative` is passed through to `~astropy.coordinates.Distance`.
+        """
+        
+        plx = self.parallax.copy()
+
+        if min_parallax is not None:
+            clipped = plx < min_parallax.to(plx.unit, u.parallax())
+            clipped |= ~np.isfinite(plx)
+            plx[clipped] = min_parallax.to(plx.unit, u.parallax())
+
+        return coord.Distance(parallax=plx, allow_negative=allow_negative)                  
 
     @property
     def distance(self):
-        """Assumes 1/parallax. Has shape `(nrows,)`"""
-        return coord.Distance(parallax=self.parallax)
+        """Assumes 1/parallax. Has shape `(nrows,)`. 
 
+        This attribute will raise an error when there are negative or zero
+        parallax values. For more flexible retrieval of distance values and
+        auto-filling bad values, use the .get_distance() method."""
+        return self.get_distance()
+        
     @property
     def distmod(self):
         """Distance modulus, m-M = 5 * log10(dist / (10 pc))"""
@@ -409,12 +436,15 @@ class GaiaData:
         """
         return self.get_skycoord()
 
-    def get_skycoord(self, distance=None, radial_velocity=None):
+    def get_skycoord(self, distance=None, radial_velocity=None, ref_epoch=2015.5):
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
-        """
-
+        
+        `ref_epoch` is used to set the `obstime` attribute on the coordinate
+        objects.  This is often included in the DR2 tables, but `ref_epoch`
+        here is used if it's not. 
+        """        
         _coord_opts = (distance, radial_velocity)
         if 'coord' in self._cache:
             try:
@@ -428,7 +458,15 @@ class GaiaData:
         kw = dict()
         if self._has_rv:
             kw['radial_velocity'] = self.radial_velocity
-
+            
+        # Reference epoch (2015.5 for DR2, could change in future)
+        if 'ref_epoch' in self.data.colnames:
+            obstime = Time(self.ref_epoch.value, format='decimalyear')
+        else:
+            obstime = Time(ref_epoch, format='decimalyear')
+            
+        kw['obstime'] = obstime
+        
         if radial_velocity is not False and radial_velocity is not None:
             kw['radial_velocity'] = radial_velocity
         elif radial_velocity is False and 'radial_velocity' in kw:
