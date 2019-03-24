@@ -1,6 +1,14 @@
 0.4 (unreleased)
 ================
 
+- Added ``get_distance`` and ``get_radial_velocity`` methods for filling
+  unmeasured or invalid values.
+- Added support for computing extinction values and extinction-corrected
+  photometry for the Gaia DR2 bandpasses.
+- Added a method for generating random samples from the Gaia astrometric error
+  distribution for each source (``get_error_samples()``).
+- Output ``SkyCoord`` objects now contain an ``obstime`` corresponding to the
+  reference epoch of the data.
 
 0.3 (2018-06-04)
 ================
