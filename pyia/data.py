@@ -232,7 +232,8 @@ class GaiaData:
         return np.vstack((self.pmra.value, self.pmdec.to(_u).value)).T * _u
 
     @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
-    def get_distance(self, min_parallax=None, allow_negative=False):
+    def get_distance(self, min_parallax=None, parallax_fill_value=np.nan,
+                     allow_negative=False):
         """Compute distance from parallax (by inverting the parallax) using
         `~astropy.coordinates.Distance`.
 
@@ -252,10 +253,13 @@ class GaiaData:
 
         plx = self.parallax.copy()
 
+        if np.isnan(parallax_fill_value):
+            parallax_fill_value = parallax_fill_value * u.mas
+
         if min_parallax is not None:
-            clipped = plx < min_parallax.to(plx.unit, u.parallax())
+            clipped = plx < min_parallax
             clipped |= ~np.isfinite(plx)
-            plx[clipped] = min_parallax.to(plx.unit, u.parallax())
+            plx[clipped] = parallax_fill_value
 
         return coord.Distance(parallax=plx, allow_negative=allow_negative)
 
@@ -267,6 +271,19 @@ class GaiaData:
         parallax values. For more flexible retrieval of distance values and
         auto-filling bad values, use the .get_distance() method."""
         return self.get_distance()
+
+    def get_radial_velocity(self, fill_value=None):
+        """Return radial velocity but with invalid values filled with the
+        specified fill value.
+
+        Parameters
+        ----------
+        fill_value : `~astropy.units.Quantity` (optional)
+            If not ``None``, fill any invalid values with the specified value.
+        """
+        rv = self.radial_velocity.copy()
+        rv[~np.isfinite(rv)] = fill_value
+        return rv
 
     @property
     def distmod(self):
