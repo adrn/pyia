@@ -64,8 +64,10 @@ gaia_unit_map = {
     'lum_val': u.Lsun,
     'lum_percentile_lower': u.Lsun,
     'lum_percentile_upper': u.Lsun,
-    'ref_epoch':u.year
+    'ref_epoch': u.year
 }
+
+DEFAULT_REF_EPOCH = Time(2015.5, format='decimalyear')
 
 
 class GaiaData:
@@ -82,7 +84,7 @@ class GaiaData:
     """
 
     def __init__(self, data, **kwargs):
-        
+
         if not isinstance(data, Table):
             if isinstance(data, str):
                 data = Table.read(data, **kwargs)
@@ -91,7 +93,7 @@ class GaiaData:
                 # the dict-like object might have Quantity's, so we want to
                 # preserve any units
                 data = Table(data, **kwargs)
-                
+
         # HACK and JFC: make sure table isn't masked
         if data.masked:
             cols = []
@@ -128,7 +130,9 @@ class GaiaData:
         Run the specified query and return a `GaiaData` instance with the
         returned data.
 
-        This is meant only to be used for quick queries to the main Gaia science archive. For longer queries and more customized usage, use TAP access to any of the Gaia mirrors with, e.g., astroquery or pyvo.
+        This is meant only to be used for quick queries to the main Gaia science
+        archive. For longer queries and more customized usage, use TAP access to
+        any of the Gaia mirrors with, e.g., astroquery or pyvo.
 
         This requires ``astroquery`` to be installed.
 
@@ -226,18 +230,26 @@ class GaiaData:
         """2D proper motion. Has shape `(nrows, 2)`"""
         _u = self.pmra.unit
         return np.vstack((self.pmra.value, self.pmdec.to(_u).value)).T * _u
-    
+
     @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
     def get_distance(self, min_parallax=None, allow_negative=False):
+        """Compute distance from parallax (by inverting the parallax) using
+        `~astropy.coordinates.Distance`.
+
+        Parameters
+        ----------
+        min_parallax : `~astropy.units.Quantity` (optional)
+            If `min_parallax` specified, the parallaxes are clipped to this
+            values (and it is also used to replace NaNs).
+        allow_negative : bool (optional)
+            This is passed through to `~astropy.coordinates.Distance`.
+
+        Returns
+        -------
+        dist : `~astropy.coordinates.Distance`
+            A ``Distance`` object with the data.
         """
-        Compute distance from parallax using `~astropy.coordinates.Distance`.
-        
-        If `min_parallax` supplied, then the parallaxes are clipped to this
-        values (and it is also used to replace NaNs).
-        
-        `allow_negative` is passed through to `~astropy.coordinates.Distance`.
-        """
-        
+
         plx = self.parallax.copy()
 
         if min_parallax is not None:
@@ -245,17 +257,17 @@ class GaiaData:
             clipped |= ~np.isfinite(plx)
             plx[clipped] = min_parallax.to(plx.unit, u.parallax())
 
-        return coord.Distance(parallax=plx, allow_negative=allow_negative)                  
+        return coord.Distance(parallax=plx, allow_negative=allow_negative)
 
     @property
     def distance(self):
-        """Assumes 1/parallax. Has shape `(nrows,)`. 
+        """Assumes 1/parallax. Has shape `(nrows,)`.
 
         This attribute will raise an error when there are negative or zero
         parallax values. For more flexible retrieval of distance values and
         auto-filling bad values, use the .get_distance() method."""
         return self.get_distance()
-        
+
     @property
     def distmod(self):
         """Distance modulus, m-M = 5 * log10(dist / (10 pc))"""
@@ -414,14 +426,17 @@ class GaiaData:
                 self._cache['A_R'])
 
     def get_G0(self):
+        """Return the extinction-corrected G-band magnitude."""
         A, _, _ = self.get_ext()
         return self.phot_g_mean_mag - A
 
     def get_BP0(self):
+        """Return the extinction-corrected G_BP magnitude."""
         _, A, _ = self.get_ext()
         return self.phot_bp_mean_mag - A
 
     def get_RP0(self):
+        """Return the extinction-corrected G_RP magnitude."""
         _, _, A = self.get_ext()
         return self.phot_rp_mean_mag - A
 
@@ -433,18 +448,42 @@ class GaiaData:
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
+
+        Use the ``get_skycoord()`` method for more flexible access.
         """
         return self.get_skycoord()
 
-    def get_skycoord(self, distance=None, radial_velocity=None, ref_epoch=2015.5):
+    def get_skycoord(self, distance=None, radial_velocity=None,
+                     ref_epoch=DEFAULT_REF_EPOCH):
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
-        
+
         `ref_epoch` is used to set the `obstime` attribute on the coordinate
-        objects.  This is often included in the DR2 tables, but `ref_epoch`
-        here is used if it's not. 
-        """        
+        objects.  This is often included in the data release tables, but
+        `ref_epoch` here is used if it's not.
+
+        Parameters
+        ----------
+        distance : `~astropy.coordinate.Distance`, `~astropy.units.Quantity`, ``False`` (optional)
+            If ``None``, this inverts the parallax to get the distance from the
+            Gaia data. If ``False``, distance information is ignored. If an
+            astropy ``Quantity`` or ``Distance`` object, it sets the distance
+            values of the output ``SkyCoord`` to whatever is passed in.
+        radial_velocity : `~astropy.units.Quantity` (optional)
+            If ``None``, this uses radial velocity data from the input Gaia
+            table. If an astropy ``Quantity`` object, it sets the radial
+            velocity values of the output ``SkyCoord`` to whatever is passed in.
+        ref_epoch : `~astropy.time.Time`, float (optional)
+            The reference epoch of the data. If not specified, this will try to
+            read it from the input Gaia data table. If not provided, this will
+            be set to whatever the most recent data release is, so, **beware**!
+
+        Returns
+        -------
+        c : `~astropy.coordinates.SkyCoord`
+            The coordinate object constructed from the input Gaia data.
+        """
         _coord_opts = (distance, radial_velocity)
         if 'coord' in self._cache:
             try:
@@ -458,15 +497,15 @@ class GaiaData:
         kw = dict()
         if self._has_rv:
             kw['radial_velocity'] = self.radial_velocity
-            
-        # Reference epoch (2015.5 for DR2, could change in future)
+
+        # Reference epoch
         if 'ref_epoch' in self.data.colnames:
             obstime = Time(self.ref_epoch.value, format='decimalyear')
         else:
             obstime = Time(ref_epoch, format='decimalyear')
-            
+
         kw['obstime'] = obstime
-        
+
         if radial_velocity is not False and radial_velocity is not None:
             kw['radial_velocity'] = radial_velocity
         elif radial_velocity is False and 'radial_velocity' in kw:
