@@ -205,7 +205,7 @@ will cause any coordinate transformations to fail (the transformation will fill
 all values with NaN when a distance is NaN)::
 
     >>> c = g.get_skycoord(distance=dist)
-    >>> c.galactic
+    >>> c.galactic # doctest: +FLOAT_CMP
     <SkyCoord (Galactic): (l, b, distance) in (deg, deg, pc)
         [(         nan,        nan,           nan),
          (         nan,        nan,           nan),
@@ -225,7 +225,7 @@ passing in custom distance and/or radial velocity data to ``get_skycoord()``::
     >>> c = g.get_skycoord(distance=g.get_distance(min_parallax=1e-3*u.mas,
     ...                                            parallax_fill_value=1e-5*u.mas),
     ...                    radial_velocity=g.get_radial_velocity(fill_value=1e8*u.km/u.s))
-    >>> c.galactic
+    >>> c.galactic # doctest: +FLOAT_CMP
     <SkyCoord (Galactic): (l, b, distance) in (deg, deg, pc)
         [(288.19236138, 2.43659588, 1.00000000e+08),
          (288.32526751, 2.18391781, 1.00000000e+08),
