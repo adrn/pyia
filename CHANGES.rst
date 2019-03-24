@@ -1,4 +1,4 @@
-0.4 (unreleased)
+0.4 (2019-03-24)
 ================
 
 - Added ``get_distance`` and ``get_radial_velocity`` methods for filling
