@@ -42,6 +42,7 @@ or by executing a remote query with `~pyia.GaiaData.from_query()`. Let's now
 execute some imports  we'll need later::
 
     >>> import astropy.units as u
+    >>> import numpy as np
     >>> from pyia import GaiaData
 
 If you've already downloaded some Gaia data in tabular format and saved it to a
@@ -73,7 +74,7 @@ attribute access. By using the attribute, we get back an
 `~astropy.units.Quantity` object with the correct units::
 
     >>> g.parallax[:4] # doctest: +FLOAT_CMP
-    <Quantity [0.22974425, 0.70930482, 0.47377294, 0.8412405 ] mas>
+    <Quantity [0.22974425, 0.70930482, 0.47377294, 0.8412405 ] marcsec>
     >>> g.phot_g_mean_mag[:4] # doctest: +FLOAT_CMP
     <Quantity [13.862558, 17.090054, 14.316803, 16.782425] mag>
 
@@ -143,7 +144,7 @@ motion array with units (as a `~astropy.units.Quantity`)::
     <Quantity [[ -7.08493408,   1.49887161],
                [-10.43896891,  -7.55166654],
                [ -2.67527741,  -1.83343139],
-               [ -2.84067421,   4.59017005]] mas / yr>
+               [ -2.84067421,   4.59017005]] marcsec / yr>
 
 Finally, we can retrieve a `~astropy.coordinates.SkyCoord` object for all rows::
 
