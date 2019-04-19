@@ -1,6 +1,8 @@
 1.0 (unreleased)
 ================
 
+- Added ``get_uwe`` and ``get_ruwe`` methods to compute the unit weight error
+  and renormalized unit weight error (using code from Anthony Brown).
 
 0.4 (2019-03-24)
 ================
