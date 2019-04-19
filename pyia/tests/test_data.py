@@ -140,3 +140,10 @@ def test_get_samples():
 
     c = g_samples.get_skycoord(distance=False)
     assert c.shape == (100, 16)
+
+
+def test_ruwe():
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
+    gd = GaiaData(Table.read(filename))
+    ruwe = gd.get_ruwe()
+    assert len(ruwe) == len(gd)

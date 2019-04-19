@@ -9,6 +9,7 @@ import astropy.units as u
 import numpy as np
 
 from .extinction import get_ext
+from .ruwetools import U0Interpolator
 
 __all__ = ['GaiaData']
 
@@ -456,6 +457,19 @@ class GaiaData:
         """Return the extinction-corrected G_RP magnitude."""
         _, _, A = self.get_ext()
         return self.phot_rp_mean_mag - A
+
+    def get_uwe(self):
+        """Compute and return the unit-weight error."""
+        return np.sqrt(self.astrometric_chi2_al /
+                       (self.astrometric_n_good_obs_al-5))
+
+    def get_ruwe(self):
+        """Compute and return the renormalized unit-weight error."""
+        interp = U0Interpolator()
+
+        bprp = self.phot_bp_mean_mag.value - self.phot_rp_mean_mag.value
+        u0 = interp.get_u0(self.phot_g_mean_mag.value, bprp)
+        return self.get_uwe() / u0
 
     ##########################################################################
     # Astropy connections
