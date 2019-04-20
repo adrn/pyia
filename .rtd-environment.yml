@@ -4,9 +4,10 @@ channels:
   - astropy
 
 dependencies:
-  - python==3.6
-  - astropy>=2
+  - python
+  - astropy
   - numpy
   - cython
   - matplotlib
   - pandas
+  - scipy
