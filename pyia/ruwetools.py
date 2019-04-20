@@ -7,8 +7,12 @@ Anthony Brown Oct 2018 - Oct 2018
 """
 
 import numpy as np
-from scipy.interpolate import interp1d, RectBivariateSpline
 from astropy.utils.data import get_pkg_data_filename
+try:
+    from scipy.interpolate import interp1d, RectBivariateSpline
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
 
 class U0Interpolator:
     """
@@ -21,6 +25,10 @@ class U0Interpolator:
         """
         Initialize the class.
         """
+
+        if not HAS_SCIPY:
+            raise RuntimeError("Computing the renormalized unit weight error, "
+                               "RUWE, required scipy to be installed.")
 
         ngmagbins = 1741
         ncolorbins = 111
