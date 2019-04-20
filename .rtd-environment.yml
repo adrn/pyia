@@ -11,4 +11,6 @@ dependencies:
   - matplotlib
   - pandas
   - scipy
-  - sphinx_astropy
+  - pip
+  - pip:
+    - sphinx_astropy
