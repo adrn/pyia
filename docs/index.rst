@@ -8,16 +8,15 @@ Source code `on GitHub <https://github.com/adrn/pyia>`_.
 
 What ``pyia`` can do for you:
 
-* Provides access to Gaia data columns as `~astropy.units.Quantity` objects,
-  i.e. with units (e.g., ``data.parallax`` will have units
-  'milliarcsecond'),
-* Construct covariance matrices for Gaia data (`pyia.GaiaData.get_cov()`),
+* Access to Gaia data columns as `~astropy.units.Quantity` objects,
+  i.e., with units (e.g., ``data.parallax`` will have units 'milliarcsecond')
+* Construct covariance matrices for Gaia data (`pyia.GaiaData.get_cov()`)
 * Generate random samples from the Gaia error distribution per source
-  (`pyia.GaiaData.get_error_samples()`),
+  (`pyia.GaiaData.get_error_samples()`)
 * Create `~astropy.coordinates.SkyCoord` objects from Gaia data
-  (`pyia.GaiaData.skycoord`),
-* Support for executing simple (small) remote queries via the Gaia science
-  archive and automatically fetching results (`pyia.GaiaData.from_query()`).
+  (`pyia.GaiaData.skycoord`)
+* Execute simple (small) remote queries via the Gaia science archive and
+  automatically fetch the results (`pyia.GaiaData.from_query()`)
 
 ************
 Installation
