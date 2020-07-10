@@ -293,6 +293,7 @@ coordinate transformation machinery:
 
     >>> c_samples = g_samples.get_skycoord()
     >>> import astropy.coordinates as coord
+    >>> _ = coord.galactocentric_frame_defaults.set('v4.0')
     >>> galcen = c_samples.transform_to(coord.Galactocentric)
 
 Let's now look at the uncertainty on the magnitude of the total velocity, ``v``,
