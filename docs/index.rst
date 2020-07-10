@@ -45,6 +45,13 @@ execute some imports  we'll need later::
     >>> import numpy as np
     >>> from pyia import GaiaData
 
+This code block can be ignored and is only used to set up paths to data files
+used in the examples below::
+
+    >>> import os, pyia
+    >>> data_path = os.path.join(os.path.split(pyia.__file__)[0],
+    ...                          'tests/data')
+
 If you've already downloaded some Gaia data in tabular format and saved it to a
 file on disk, you can create an instance by passing the path to the file. As an
 example, I've created a small subset of Gaia DR2 data downloaded from the
@@ -58,14 +65,14 @@ the following query::
 This data is also provided with ``pyia``, so we'll load the cached version
 here::
 
-    >>> g = GaiaData('docs/_static/gdr2_sm.fits')
+    >>> g = GaiaData(f'{data_path}/gdr2_sm.fits')
     >>> g
     <GaiaData: 100 rows>
 
 As mentioned above, you can also pass in pre-loaded data::
 
     >>> from astropy.table import Table
-    >>> tbl = Table.read('docs/_static/gdr2_sm.fits')
+    >>> tbl = Table.read(f'{data_path}/gdr2_sm.fits')
     >>> GaiaData(tbl)
     <GaiaData: 100 rows>
 
@@ -172,7 +179,7 @@ corresponding distance!). We may want to fill those values with NaN's or just
 filter them out. Let's work now with a small subset of the Gaia data that
 contains some negative parallax measurements::
 
-    >>> g = GaiaData('docs/_static/gdr2_sm_negplx.fits')
+    >>> g = GaiaData(f'{data_path}/gdr2_sm_negplx.fits')
     >>> len(g)
     8
     >>> g[np.isfinite(g.parallax) & (g.parallax > 0)]
@@ -261,7 +268,7 @@ distribution for the full-space velocity.
 
 First, let's load the data:
 
-    >>> g_rv = GaiaData('docs/_static/gdr2_rv_sm.fits')
+    >>> g_rv = GaiaData(f'{data_path}/gdr2_rv_sm.fits')
 
 All of these sources have measured radial velocities:
 
