@@ -3,7 +3,7 @@ pyia
 
 A Python package for working with *Gaia* data.
 
-|Coverage Status| |Build status|
+|Build status|
 
 Documentation
 -------------
@@ -42,15 +42,13 @@ License
 
 |License|
 
-Copyright 2017-2018 Adrian Price-Whelan and contributors.
+Copyright 2017-2020 Adrian Price-Whelan and contributors.
 
 ``Pyia`` is free software made available under the MIT License. For details see
-the `LICENSE <https://github.com/adrn/pyia/blob/master/LICENSE>`_ file.
+the `LICENSE <https://github.com/adrn/pyia/blob/master/LICENSE.rst>`_ file.
 
-.. |Coverage Status| image:: https://coveralls.io/repos/adrn/pyia/badge.svg?branch=master&service=github
-   :target: https://coveralls.io/github/adrn/pyia?branch=master
-.. |Build status| image:: http://img.shields.io/travis/adrn/pyia/master.svg?style=flat
-   :target: http://travis-ci.org/adrn/pyia
+.. |Build status| image:: https://github.com/adrn/pyia/workflows/Test%20pyia/badge.svg
+   :target: https://github.com/adrn/pyia/workflows
 .. |License| image:: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
    :target: https://github.com/adrn/pyia/blob/master/LICENSE
 .. |Documentation Status| image:: https://readthedocs.org/projects/pyia/badge/?version=latest
