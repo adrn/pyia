@@ -27,6 +27,8 @@ Attribution
 
 If you find this package useful, consider citing the Zenodo record:
 
+.. parsed-literal::
+
     @article{adrian price-whelan_2018,
         title={adrn/pyia: v0.2},
         DOI={10.5281/zenodo.1228136},
