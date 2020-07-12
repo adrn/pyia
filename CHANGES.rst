@@ -1,4 +1,4 @@
-1.0 (unreleased)
+1.0 (2020-07-11)
 ================
 
 - Added ``get_uwe`` and ``get_ruwe`` methods to compute the unit weight error
