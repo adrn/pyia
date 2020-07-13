@@ -1,4 +1,4 @@
-name: Wheels
+name: Packaging
 on:
   release:
     types:
@@ -7,39 +7,7 @@ on:
     branches:
       - main
 
-env:
-  CIBW_BUILD: "cp3?-*"
-  CIBW_SKIP: "*-win32 *-manylinux_i686 cp35-*"
-  CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-
 jobs:
-  build_wheels:
-    name: Build ${{ matrix.python-version }} wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v2
-        name: Install Python
-        with:
-          # Note: cibuildwheel builds for many Python versions beyond this one
-          python-version: "3.7"
-
-      - name: Build wheels
-        run: |
-          python -m pip install cibuildwheel==1.5.2
-          python -m cibuildwheel --output-dir wheelhouse
-
-      - uses: actions/upload-artifact@v2
-        with:
-          path: ./wheelhouse/*.whl
-
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
@@ -62,7 +30,7 @@ jobs:
           path: dist/*.tar.gz
 
   upload_pypi:
-    needs: [build_wheels, build_sdist]
+    needs: build_sdist
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
