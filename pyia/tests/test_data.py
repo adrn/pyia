@@ -118,7 +118,6 @@ def test_setattr():
 
 
 @pytest.mark.remote_data
-@pytest.mark.xfail # Gaia archive is down!
 def test_from_query():
     q = '''SELECT TOP 10 * FROM gaiadr1.tgas_source'''
     gd = GaiaData.from_query(q)
@@ -147,3 +146,13 @@ def test_ruwe():
     gd = GaiaData(Table.read(filename))
     ruwe = gd.get_ruwe()
     assert len(ruwe) == len(gd)
+
+
+def test_extinction():
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
+    g = GaiaData(filename)
+
+    ebv = np.random.uniform(0, 0.1, len(g))
+    g.get_ext(ebv=ebv)
+    g.get_BP0()
+    g.get_BP0(ebv=ebv)

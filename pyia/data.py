@@ -411,7 +411,7 @@ class GaiaData:
         c = self.get_skycoord(distance=False)
         return dustmaps_cls().query(c)
 
-    def get_ext(self, dustmaps_cls=None):
+    def get_ext(self, ebv=None, dustmaps_cls=None):
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -428,12 +428,17 @@ class GaiaData:
         A_BP
         A_RP
         """
+        if 'ebv' not in self._cache:
+            if ebv is None:
+                self._cache['ebv'] = self.get_ebv(dustmaps_cls=dustmaps_cls)
+            else:
+                self._cache['ebv'] = ebv
+
         if 'A_G' not in self._cache:
-            EBV = self.get_ebv(dustmaps_cls=dustmaps_cls)
             A_G, A_B, A_R = get_ext(self.phot_g_mean_mag.value,
                                     self.phot_bp_mean_mag.value,
                                     self.phot_rp_mean_mag.value,
-                                    EBV)
+                                    self._cache['ebv'])
 
             self._cache['A_G'] = A_G * u.mag
             self._cache['A_B'] = A_B * u.mag
@@ -443,19 +448,23 @@ class GaiaData:
                 self._cache['A_B'],
                 self._cache['A_R'])
 
-    def get_G0(self):
-        """Return the extinction-corrected G-band magnitude."""
-        A, _, _ = self.get_ext()
+    def get_G0(self, *args, **kwargs):
+        """Return the extinction-corrected G-band magnitude. Any arguments are
+        passed to ``get_ext()``.
+        """
+        A, _, _ = self.get_ext(*args, **kwargs)
         return self.phot_g_mean_mag - A
 
-    def get_BP0(self):
-        """Return the extinction-corrected G_BP magnitude."""
-        _, A, _ = self.get_ext()
+    def get_BP0(self, *args, **kwargs):
+        """Return the extinction-corrected G_BP magnitude. Any arguments are
+        passed to ``get_ext()``."""
+        _, A, _ = self.get_ext(*args, **kwargs)
         return self.phot_bp_mean_mag - A
 
-    def get_RP0(self):
-        """Return the extinction-corrected G_RP magnitude."""
-        _, _, A = self.get_ext()
+    def get_RP0(self, *args, **kwargs):
+        """Return the extinction-corrected G_RP magnitude. Any arguments are
+        passed to ``get_ext()``."""
+        _, _, A = self.get_ext(*args, **kwargs)
         return self.phot_rp_mean_mag - A
 
     def get_uwe(self):
