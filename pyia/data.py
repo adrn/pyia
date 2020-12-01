@@ -68,13 +68,17 @@ gaia_unit_map = {
     'ref_epoch': u.year
 }
 
-DEFAULT_REF_EPOCH = Time(2015.5, format='decimalyear')
+REF_EPOCH = {
+    'DR2': Time(2015.5, format='jyear'),
+    'EDR3': Time(2016.0, format='jyear')
+}
+LATEST_RELEASE = 'EDR3'
 
 
 class GaiaData:
     """Class for loading and interacting with data from the Gaia mission. This
     should work with data from any data release, i.e., DR1 gaia_source or TGAS,
-    or DR2 gaia_source.
+    or DR2 gaia_source, or EDR3 gaia_source.
 
     Parameters
     ----------
@@ -371,7 +375,7 @@ class GaiaData:
         else:
             C[:, 5, 5] = np.inf
 
-        C[:, 5, 5][np.isnan(C[:, 5, 5])] = np.inf # missing values
+        C[:, 5, 5][np.isnan(C[:, 5, 5])] = np.inf  # missing values
 
         for i, name1 in enumerate(names):
             for j, name2 in enumerate(names):
@@ -494,7 +498,7 @@ class GaiaData:
         return self.get_skycoord()
 
     def get_skycoord(self, distance=None, radial_velocity=None,
-                     ref_epoch=DEFAULT_REF_EPOCH):
+                     ref_epoch=REF_EPOCH[LATEST_RELEASE]):
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
@@ -540,9 +544,9 @@ class GaiaData:
 
         # Reference epoch
         if 'ref_epoch' in self.data.colnames:
-            obstime = Time(self.ref_epoch.value, format='decimalyear')
+            obstime = Time(self.ref_epoch.value, format='jyear')
         else:
-            obstime = Time(ref_epoch, format='decimalyear')
+            obstime = Time(ref_epoch, format='jyear')
 
         kw['obstime'] = obstime
 
