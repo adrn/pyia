@@ -209,10 +209,10 @@ class GaiaData:
         }
 
         if source_id_dr is None:
-            source_id_dr = LATEST_RELEASE
+            source_id_dr = LATEST_RELEASE.lower()
 
         if data_dr is None:
-            data_dr = LATEST_RELEASE
+            data_dr = LATEST_RELEASE.lower()
 
         if source_id_dr == data_dr:
             query_str = f"""
