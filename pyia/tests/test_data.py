@@ -129,6 +129,20 @@ def test_from_query():
     assert len(gd) == 10
 
 
+@pytest.mark.remote_data
+def test_from_source_id():
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
+    tbl = Table.read(filename)
+
+    gd = GaiaData.from_source_id(tbl['source_id'][0], 'dr2', 'dr2')
+    assert len(gd) == 1
+    assert gd.designation[0].startswith('Gaia DR2')
+
+    gd = GaiaData.from_source_id(tbl['source_id'][0], 'dr2', data_dr='edr3')
+    assert len(gd) == 1
+    assert gd.designation[0].startswith('Gaia EDR3')
+
+
 def test_get_samples():
     filename = get_pkg_data_filename('data/gdr2_sm.fits')
     gd = GaiaData(Table.read(filename))

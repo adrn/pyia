@@ -173,7 +173,8 @@ class GaiaData:
         return cls(tbl)
 
     @classmethod
-    def from_source_id(cls, source_id, source_id_dr=None, data_dr=None):
+    def from_source_id(cls, source_id, source_id_dr=None, data_dr=None,
+                       **kwargs):
         """Retrieve data from a DR for a given Gaia source_id in a DR.
 
         Useful if you have, e.g., a DR2 source_id and want EDR3 data.
@@ -188,6 +189,8 @@ class GaiaData:
         data_dr : str, optional
             The data release slug (e.g., 'dr2' or 'edr3') to retrieve data from.
             Defaults to the latest data release.
+        **kwargs
+            Passed to ``from_query()``
 
         Returns
         -------
@@ -195,12 +198,46 @@ class GaiaData:
             An instance of this object.
         """
 
+        join_tables = {
+            'dr1': {'dr2': "gaiadr2.dr1_neighbourhood"},
+            'dr2': {'edr3': "gaiaedr3.dr2_neighbourhood"},
+        }
+        source_id_prefixes = {
+            'dr1': 'dr1',
+            'dr2': 'dr2',
+            'edr3': 'dr3'
+        }
+
         if source_id_dr is None:
             source_id_dr = LATEST_RELEASE
 
         if data_dr is None:
             data_dr = LATEST_RELEASE
 
+        if source_id_dr == data_dr:
+            query_str = f"""
+                SELECT * FROM gaia{data_dr}.gaia_source AS gaia
+                WHERE gaia.source_id = {source_id}
+            """
+            return cls.from_query(query_str, **kwargs)
+
+        dr1, dr2 = sorted([source_id_dr, data_dr])
+
+        try:
+            join_table = join_tables[dr1][dr2]
+            source_id_pref = source_id_prefixes[source_id_dr]
+            data_pref = source_id_prefixes[data_dr]
+        except KeyError:
+            raise KeyError(f"Failed to find join table for {source_id_dr} "
+                        f"to {data_dr}")
+
+        query_str = f"""
+            SELECT * FROM gaia{data_dr}.gaia_source AS gaia
+            JOIN {join_table} AS old_gaia
+                ON gaia.source_id = old_gaia.{data_pref}_source_id
+            WHERE old_gaia.{source_id_pref}_source_id = {source_id}
+        """
+        return cls.from_query(query_str, **kwargs)
 
     ##########################################################################
     # Python internal
