@@ -229,7 +229,7 @@ class GaiaData:
             data_pref = source_id_prefixes[data_dr]
         except KeyError:
             raise KeyError(f"Failed to find join table for {source_id_dr} "
-                        f"to {data_dr}")
+                           f"to {data_dr}")
 
         query_str = f"""
             SELECT * FROM gaia{data_dr}.gaia_source AS gaia
@@ -248,11 +248,19 @@ class GaiaData:
         if name in ['data', 'units']:
             raise AttributeError()
 
+        if name.startswith('radial_velocity'):
+            # HACK: this should be more general...
+            if ('radial_velocity' not in self.data.colnames
+                    and 'dr2_radial_velocity' in self.data.colnames):
+                lookup_name = f'dr2_{name}'
+        else:
+            lookup_name = name
+
         if name in self.units:
-            return np.asarray(self.data[name]) * self.units[name]
+            return np.asarray(self.data[lookup_name]) * self.units[name]
 
         else:
-            return self.data[name]
+            return self.data[lookup_name]
 
     def __setattr__(self, name, val):
 
