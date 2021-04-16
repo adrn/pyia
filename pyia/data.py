@@ -124,7 +124,9 @@ class GaiaData:
                 except ValueError:
                     self._invalid_units[c] = data[c].unit
 
-        self._has_rv = 'radial_velocity' in self.data.colnames
+        # HACK: hard coded
+        self._has_rv = ('radial_velocity' in self.data.colnames or
+                        'dr2_radial_velocity' in self.data.colnames)
 
         # For caching later
         self._cache = dict()
@@ -248,13 +250,12 @@ class GaiaData:
         if name in ['data', 'units']:
             raise AttributeError()
 
+        lookup_name = name
         if name.startswith('radial_velocity'):
             # HACK: this should be more general...
             if ('radial_velocity' not in self.data.colnames
                     and 'dr2_radial_velocity' in self.data.colnames):
                 lookup_name = f'dr2_{name}'
-        else:
-            lookup_name = name
 
         if name in self.units:
             return np.asarray(self.data[lookup_name]) * self.units[name]
