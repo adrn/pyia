@@ -1,6 +1,9 @@
 1.3 (unreleased)
 ================
 
+- Added a new ``GaiaData.from_source_id()`` classmethod to enable retrieving
+  Gaia data from some data release, given a source_id from another data release.
+
 
 1.2 (2020-12-01)
 ================
