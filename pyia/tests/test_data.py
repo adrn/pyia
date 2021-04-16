@@ -53,6 +53,10 @@ def test_slicing_getattr():
     gd.parallax
     gd.a_g_val
 
+    gd['source_id']
+    gd['parallax']
+    gd['a_g_val']
+
 
 def test_str_repr():
     filename = get_pkg_data_filename('data/gdr2_sm.fits')

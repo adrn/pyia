@@ -172,6 +172,36 @@ class GaiaData:
 
         return cls(tbl)
 
+    @classmethod
+    def from_source_id(cls, source_id, source_id_dr=None, data_dr=None):
+        """Retrieve data from a DR for a given Gaia source_id in a DR.
+
+        Useful if you have, e.g., a DR2 source_id and want EDR3 data.
+
+        Parameters
+        ----------
+        source_id : int
+            The Gaia source_id
+        source_id_dr : str, optional
+            The data release slug (e.g., 'dr2' or 'edr3') for the input
+            source_id. Defaults to the latest data release.
+        data_dr : str, optional
+            The data release slug (e.g., 'dr2' or 'edr3') to retrieve data from.
+            Defaults to the latest data release.
+
+        Returns
+        -------
+        gaiadata : `GaiaData`
+            An instance of this object.
+        """
+
+        if source_id_dr is None:
+            source_id_dr = LATEST_RELEASE
+
+        if data_dr is None:
+            data_dr = LATEST_RELEASE
+
+
     ##########################################################################
     # Python internal
     #
@@ -213,6 +243,8 @@ class GaiaData:
     def __getitem__(self, slc):
         if isinstance(slc, int):
             slc = slice(slc, slc+1)
+        elif isinstance(slc, str):
+            return self.__getattr__(slc)
         return self.__class__(self.data[slc])
 
     def __len__(self):
