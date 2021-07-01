@@ -1,4 +1,4 @@
-1.3 (unreleased)
+1.3 (2021-07-01)
 ================
 
 - Added a new ``GaiaData.from_source_id()`` classmethod to enable retrieving
