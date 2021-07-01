@@ -4,6 +4,8 @@
 - Added a new ``GaiaData.from_source_id()`` classmethod to enable retrieving
   Gaia data from some data release, given a source_id from another data release.
 
+- Allow ``GaiaData`` instances to be created from a ``pathlib.Path`` object
+
 
 1.2 (2020-12-01)
 ================

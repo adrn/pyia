@@ -1,6 +1,9 @@
 # coding: utf-8
 """ Data structures. """
 
+# Standard library
+import pathlib
+
 # Third-party
 import astropy.coordinates as coord
 from astropy.table import Table, Column
@@ -91,7 +94,7 @@ class GaiaData:
     def __init__(self, data, **kwargs):
 
         if not isinstance(data, Table):
-            if isinstance(data, str):
+            if isinstance(data, (str, pathlib.Path)):
                 data = Table.read(data, **kwargs)
 
             else:
@@ -618,7 +621,7 @@ class GaiaData:
         if 'coord' in self._cache:
             try:
                 _check = self._cache['coord_opts'] == _coord_opts
-            except ValueError: # array passed in for distance or radial_velocity
+            except ValueError:  # array passed for distance or radial_velocity
                 _check = False
 
             if _check:
