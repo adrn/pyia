@@ -99,7 +99,8 @@ class GaiaData:
                 # preserve any units
                 data = Table(data, **kwargs)
 
-        # HACK and JFC: make sure table isn't masked
+        # HACK: make sure table isn't masked, until astropy supports masked
+        # quantities
         if data.masked:
             cols = []
             for c in data.colnames:
@@ -257,11 +258,18 @@ class GaiaData:
                     and 'dr2_radial_velocity' in self.data.colnames):
                 lookup_name = f'dr2_{name}'
 
+        coldata = self.data[lookup_name]
+        if hasattr(coldata, 'mask') and coldata.mask is not None:
+            arr = coldata.filled()
+        else:
+            arr = coldata
+        arr = np.asarray(arr)
+
         if name in self.units:
-            return np.asarray(self.data[lookup_name]) * self.units[name]
+            return arr * self.units[name]
 
         else:
-            return self.data[lookup_name]
+            return arr
 
     def __setattr__(self, name, val):
 
