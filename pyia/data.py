@@ -304,6 +304,13 @@ class GaiaData:
             return self.__getattr__(slc)
         return self.__class__(self.data[slc])
 
+    def __setitem__(self, name, val):
+        if hasattr(val, 'unit'):
+            self.data[name] = val.value
+            self.units[name] = val.unit
+        else:
+            self.data[name] = val
+
     def __len__(self):
         return len(self.data)
 
@@ -598,12 +605,12 @@ class GaiaData:
 
         Parameters
         ----------
-        distance : `~astropy.coordinate.Distance`, `~astropy.units.Quantity`, ``False`` (optional)
+        distance : `~astropy.coordinate.Distance`, `~astropy.units.Quantity`, ``False``, str (optional)
             If ``None``, this inverts the parallax to get the distance from the
             Gaia data. If ``False``, distance information is ignored. If an
             astropy ``Quantity`` or ``Distance`` object, it sets the distance
             values of the output ``SkyCoord`` to whatever is passed in.
-        radial_velocity : `~astropy.units.Quantity` (optional)
+        radial_velocity : `~astropy.units.Quantity`, str (optional)
             If ``None``, this uses radial velocity data from the input Gaia
             table. If an astropy ``Quantity`` object, it sets the radial
             velocity values of the output ``SkyCoord`` to whatever is passed in.
@@ -640,14 +647,20 @@ class GaiaData:
         kw['obstime'] = obstime
 
         if radial_velocity is not False and radial_velocity is not None:
-            kw['radial_velocity'] = radial_velocity
+            if isinstance(radial_velocity, str):
+                kw['radial_velocity'] = self[radial_velocity]
+            else:
+                kw['radial_velocity'] = radial_velocity
         elif radial_velocity is False and 'radial_velocity' in kw:
             kw.pop('radial_velocity')
 
         if distance is None:
             kw['distance'] = self.distance
         elif distance is not False and distance is not None:
-            kw['distance'] = distance
+            if isinstance(distance, str):
+                kw['distance'] = self[distance]
+            else:
+                kw['distance'] = distance
 
         self._cache['coord'] = coord.SkyCoord(ra=self.ra, dec=self.dec,
                                               pm_ra_cosdec=self.pmra,

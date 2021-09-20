@@ -89,7 +89,7 @@ def test_cov():
     assert C.shape == (len(gd), 6, 6)
 
     with pytest.raises(RuntimeError):
-        gd.get_cov(RAM_threshold=1*u.kilobyte) # force failure
+        gd.get_cov(RAM_threshold=1*u.kilobyte)  # force failure
 
 
 def test_skycoord():
@@ -98,6 +98,15 @@ def test_skycoord():
 
     c = gd.skycoord
     assert len(c) == len(gd)
+
+    c = gd.get_skycoord(radial_velocity='radial_velocity')
+    assert np.all(c.radial_velocity == gd.radial_velocity)
+
+    gd['dist'] = coord.Distance(parallax=gd.parallax).kpc * u.kpc
+    c = gd.get_skycoord(radial_velocity='radial_velocity',
+                        distance='dist')
+    assert np.all(c.radial_velocity == gd.radial_velocity)
+    assert np.all(c.distance == gd.distance)
 
 
 def test_setattr():
