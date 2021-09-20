@@ -174,3 +174,14 @@ def test_extinction():
     g.get_ext(ebv=ebv)
     g.get_BP0()
     g.get_BP0(ebv=ebv)
+
+
+def test_filter():
+    filename = get_pkg_data_filename('data/gdr2_sm.fits')
+    g = GaiaData(filename)
+
+    new_g = g.filter(parallax=(0.5, 2)*u.mas, phot_g_mean_mag=(None, 15*u.mag))
+
+    assert new_g.parallax.min() > 0.5*u.mas
+    assert new_g.parallax.max() < 2*u.mas
+    assert new_g.phot_g_mean_mag.max() < 15*u.mag

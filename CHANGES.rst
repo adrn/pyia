@@ -1,6 +1,9 @@
 1.4 (unreleased)
 ================
 
+- Added a new ``GaiaData.filter()`` method to enable filtering based on column
+  names and value ranges.
+
 
 1.3 (2021-07-01)
 ================

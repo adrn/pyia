@@ -700,3 +700,37 @@ class GaiaData:
             d[k] = samples[..., i] * unit
 
         return self.__class__(d)
+
+    def filter(self, **kwargs):
+        """
+        Filter the data based on columns and data ranges.
+
+        Parameters
+        ----------
+        **kwargs
+            Keys should be column names, values should be tuples representing
+            ranges to select the column values withing. For example, to select
+            parallaxes between 0.5 and 5, pass ``parallax=(0.5, 5)*u.mas``.
+            Pass `None` to skip a filter, for example ``parallax=(None,
+            5*u.mas)`` would select all parallax values < 5 mas.
+
+        Returns
+        -------
+        filtered_g : `pyia.GaiaData`
+            The same data table, but filtered.
+        """
+        mask = np.ones(len(self), dtype=bool)
+        for k, (x1, x2) in kwargs.items():
+            if x1 is None and x2 is None:
+                raise ValueError(f"Both range values are None for key {k}!")
+
+            if x1 is None:
+                mask &= self[k] < x2
+
+            elif x2 is None:
+                mask &= self[k] >= x1
+
+            else:
+                mask &= (self[k] >= x1) & (self[k] < x2)
+
+        return self[mask]
