@@ -136,7 +136,7 @@ class GaiaData:
         self._cache = dict()
 
     @classmethod
-    def from_query(cls, query_str, login_info=None):
+    def from_query(cls, query_str, login_info=None, verbose=False):
         """
         Run the specified query and return a `GaiaData` instance with the
         returned data.
@@ -173,7 +173,7 @@ class GaiaData:
         if login_info is not None:
             Gaia.login(**login_info)
 
-        job = Gaia.launch_job_async(query_str)
+        job = Gaia.launch_job_async(query_str, verbose=verbose)
         tbl = job.get_results()
 
         return cls(tbl)
