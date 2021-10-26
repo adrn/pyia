@@ -95,6 +95,7 @@ def test_cov():
 def test_skycoord():
     filename = get_pkg_data_filename('data/gdr2_sm.fits')
     gd = GaiaData(Table.read(filename))
+    gd = gd[np.isfinite(gd.radial_velocity)]
 
     c = gd.skycoord
     assert len(c) == len(gd)

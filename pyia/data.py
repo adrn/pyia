@@ -263,7 +263,7 @@ class GaiaData:
 
         coldata = self.data[lookup_name]
         if hasattr(coldata, 'mask') and coldata.mask is not None:
-            arr = coldata.filled()
+            arr = coldata.filled(np.nan)
         else:
             arr = coldata
         arr = np.asarray(arr)
