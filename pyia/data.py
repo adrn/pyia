@@ -91,6 +91,17 @@ class GaiaData:
         `astropy.table.Table.read`.
     """
 
+    # Mapping from key = dtype chars to value = fill value
+    # https://numpy.org/doc/stable/reference/arrays.dtypes.html
+    _fill_values = {
+        'i': -1,
+        'u': 0,
+        'f': np.nan,
+        'd': np.nan,
+        'U': '',
+        'S': ''
+    }
+
     def __init__(self, data, **kwargs):
 
         if not isinstance(data, Table):
@@ -263,7 +274,7 @@ class GaiaData:
 
         coldata = self.data[lookup_name]
         if hasattr(coldata, 'mask') and coldata.mask is not None:
-            arr = coldata.filled(np.nan)
+            arr = coldata.filled(self._fill_values.get(coldata.dtype.char, None))
         else:
             arr = coldata
         arr = np.asarray(arr)
@@ -321,7 +332,7 @@ class GaiaData:
         return str(self.data[names])
 
     def __repr__(self):
-        return "<GaiaData: {0:d} rows>".format(len(self))
+        return f"<GaiaData: {len(self):d} rows>"
 
     ##########################################################################
     # Computed and convenience quantities
