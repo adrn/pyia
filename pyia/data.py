@@ -11,77 +11,78 @@ from astropy.time import Time
 import astropy.units as u
 import numpy as np
 
-from .extinction import get_ext
+from .extinction import get_ext_dr2_Babusiaux
 from .ruwetools import U0Interpolator
 
-__all__ = ['GaiaData']
+__all__ = ["GaiaData"]
 
 
 # This is from reading the data model
 gaia_unit_map = {
-    'ra': u.degree,
-    'dec': u.degree,
-    'parallax': u.milliarcsecond,
-    'pmra': u.milliarcsecond / u.year,
-    'pmdec': u.milliarcsecond / u.year,
-    'radial_velocity': u.km / u.s,
-    'ra_error': u.milliarcsecond,
-    'dec_error': u.milliarcsecond,
-    'parallax_error': u.milliarcsecond,
-    'pmra_error': u.milliarcsecond / u.year,
-    'pmdec_error': u.milliarcsecond / u.year,
-    'radial_velocity_error': u.km / u.s,
-    'astrometric_excess_noise': u.mas,
-    'astrometric_weight_al': 1/u.mas**2,
-    'astrometric_pseudo_colour': 1/u.micrometer,
-    'astrometric_pseudo_colour_error': 1/u.micrometer,
-    'astrometric_sigma5d_max': u.mas,
-    'phot_g_mean_flux': u.photon/u.s,
-    'phot_g_mean_flux_error': u.photon/u.s,
-    'phot_g_mean_mag': u.mag,
-    'phot_bp_mean_flux': u.photon/u.s,
-    'phot_bp_mean_flux_error': u.photon/u.s,
-    'phot_bp_mean_mag': u.mag,
-    'phot_rp_mean_flux': u.photon/u.s,
-    'phot_rp_mean_flux_error': u.photon/u.s,
-    'phot_rp_mean_mag': u.mag,
-    'bp_rp': u.mag,
-    'bp_g': u.mag,
-    'g_rp': u.mag,
-    'rv_template_teff': u.K,
-    'l': u.degree,
-    'b': u.degree,
-    'ecl_lon': u.degree,
-    'ecl_lat': u.degree,
-    'teff_val': u.K,
-    'teff_percentile_lower': u.K,
-    'teff_percentile_upper': u.K,
-    'a_g_val': u.mag,
-    'a_g_percentile_lower': u.mag,
-    'a_g_percentile_upper': u.mag,
-    'e_bp_min_rp_val': u.mag,
-    'e_bp_min_rp_percentile_lower': u.mag,
-    'e_bp_min_rp_percentile_upper': u.mag,
-    'radius_val': u.Rsun,
-    'radius_percentile_lower': u.Rsun,
-    'radius_percentile_upper': u.Rsun,
-    'lum_val': u.Lsun,
-    'lum_percentile_lower': u.Lsun,
-    'lum_percentile_upper': u.Lsun,
-    'ref_epoch': u.year
+    "ra": u.degree,
+    "dec": u.degree,
+    "parallax": u.milliarcsecond,
+    "pmra": u.milliarcsecond / u.year,
+    "pmdec": u.milliarcsecond / u.year,
+    "radial_velocity": u.km / u.s,
+    "ra_error": u.milliarcsecond,
+    "dec_error": u.milliarcsecond,
+    "parallax_error": u.milliarcsecond,
+    "pmra_error": u.milliarcsecond / u.year,
+    "pmdec_error": u.milliarcsecond / u.year,
+    "radial_velocity_error": u.km / u.s,
+    "astrometric_excess_noise": u.mas,
+    "astrometric_weight_al": 1 / u.mas**2,
+    "astrometric_pseudo_colour": 1 / u.micrometer,
+    "astrometric_pseudo_colour_error": 1 / u.micrometer,
+    "astrometric_sigma5d_max": u.mas,
+    "phot_g_mean_flux": u.photon / u.s,
+    "phot_g_mean_flux_error": u.photon / u.s,
+    "phot_g_mean_mag": u.mag,
+    "phot_bp_mean_flux": u.photon / u.s,
+    "phot_bp_mean_flux_error": u.photon / u.s,
+    "phot_bp_mean_mag": u.mag,
+    "phot_rp_mean_flux": u.photon / u.s,
+    "phot_rp_mean_flux_error": u.photon / u.s,
+    "phot_rp_mean_mag": u.mag,
+    "bp_rp": u.mag,
+    "bp_g": u.mag,
+    "g_rp": u.mag,
+    "rv_template_teff": u.K,
+    "l": u.degree,
+    "b": u.degree,
+    "ecl_lon": u.degree,
+    "ecl_lat": u.degree,
+    "teff_val": u.K,
+    "teff_percentile_lower": u.K,
+    "teff_percentile_upper": u.K,
+    "a_g_val": u.mag,
+    "a_g_percentile_lower": u.mag,
+    "a_g_percentile_upper": u.mag,
+    "e_bp_min_rp_val": u.mag,
+    "e_bp_min_rp_percentile_lower": u.mag,
+    "e_bp_min_rp_percentile_upper": u.mag,
+    "radius_val": u.Rsun,
+    "radius_percentile_lower": u.Rsun,
+    "radius_percentile_upper": u.Rsun,
+    "lum_val": u.Lsun,
+    "lum_percentile_lower": u.Lsun,
+    "lum_percentile_upper": u.Lsun,
+    "ref_epoch": u.year,
 }
 
 REF_EPOCH = {
-    'DR2': Time(2015.5, format='jyear'),
-    'EDR3': Time(2016.0, format='jyear')
+    "DR2": Time(2015.5, format="jyear"),
+    "EDR3": Time(2016.0, format="jyear"),
+    "DR3": Time(2016.0, format="jyear"),
 }
-LATEST_RELEASE = 'EDR3'
+LATEST_RELEASE = "DR3"
 
 
 class GaiaData:
     """Class for loading and interacting with data from the Gaia mission. This
     should work with data from any data release, i.e., DR1 gaia_source or TGAS,
-    or DR2 gaia_source, or EDR3 gaia_source.
+    or DR2 gaia_source, or EDR3, DR3 gaia_source.
 
     Parameters
     ----------
@@ -93,14 +94,7 @@ class GaiaData:
 
     # Mapping from key = dtype chars to value = fill value
     # https://numpy.org/doc/stable/reference/arrays.dtypes.html
-    _fill_values = {
-        'i': -1,
-        'u': 0,
-        'f': np.nan,
-        'd': np.nan,
-        'U': '',
-        'S': ''
-    }
+    _fill_values = {"i": -1, "u": 0, "f": np.nan, "d": np.nan, "U": "", "S": ""}
 
     def __init__(self, data, **kwargs):
 
@@ -113,7 +107,7 @@ class GaiaData:
                 # preserve any units
                 data = Table(data, **kwargs)
 
-        # HACK: make sure table isn't masked, until astropy supports masked
+        # HACK: make sure table isn't masked, until astropy fully supports masked
         # quantities
         if data.masked:
             cols = []
@@ -140,8 +134,10 @@ class GaiaData:
                     self._invalid_units[c] = data[c].unit
 
         # HACK: hard coded
-        self._has_rv = ('radial_velocity' in self.data.colnames or
-                        'dr2_radial_velocity' in self.data.colnames)
+        self._has_rv = (
+            "radial_velocity" in self.data.colnames
+            or "dr2_radial_velocity" in self.data.colnames
+        )
 
         # For caching later
         self._cache = dict()
@@ -176,10 +172,12 @@ class GaiaData:
         try:
             from astroquery.gaia import Gaia
         except ImportError:
-            raise ImportError('Failed to import astroquery. To use the '
-                              'from_query() classmethod, you must first'
-                              ' install astroquery, e.g., with pip: '
-                              '\n\tpip install astroquery')
+            raise ImportError(
+                "Failed to import astroquery. To use the "
+                "from_query() classmethod, you must first"
+                " install astroquery, e.g., with pip: "
+                "\n\tpip install astroquery"
+            )
 
         if login_info is not None:
             Gaia.login(**login_info)
@@ -190,8 +188,7 @@ class GaiaData:
         return cls(tbl)
 
     @classmethod
-    def from_source_id(cls, source_id, source_id_dr=None, data_dr=None,
-                       **kwargs):
+    def from_source_id(cls, source_id, source_id_dr=None, data_dr=None, **kwargs):
         """Retrieve data from a DR for a given Gaia source_id in a DR.
 
         Useful if you have, e.g., a DR2 source_id and want EDR3 data.
@@ -216,14 +213,10 @@ class GaiaData:
         """
 
         join_tables = {
-            'dr1': {'dr2': "gaiadr2.dr1_neighbourhood"},
-            'dr2': {'edr3': "gaiaedr3.dr2_neighbourhood"},
+            "dr1": {"dr2": "gaiadr2.dr1_neighbourhood"},
+            "dr2": {"edr3": "gaiaedr3.dr2_neighbourhood"},
         }
-        source_id_prefixes = {
-            'dr1': 'dr1',
-            'dr2': 'dr2',
-            'edr3': 'dr3'
-        }
+        source_id_prefixes = {"dr1": "dr1", "dr2": "dr2", "edr3": "dr3"}
 
         if source_id_dr is None:
             source_id_dr = LATEST_RELEASE.lower()
@@ -245,8 +238,9 @@ class GaiaData:
             source_id_pref = source_id_prefixes[source_id_dr]
             data_pref = source_id_prefixes[data_dr]
         except KeyError:
-            raise KeyError(f"Failed to find join table for {source_id_dr} "
-                           f"to {data_dr}")
+            raise KeyError(
+                f"Failed to find join table for {source_id_dr} " f"to {data_dr}"
+            )
 
         query_str = f"""
             SELECT * FROM gaia{data_dr}.gaia_source AS gaia
@@ -262,18 +256,20 @@ class GaiaData:
     def __getattr__(self, name):
         # to prevent recursion errors:
         # nedbatchelder.com/blog/201010/surprising_getattr_recursion.html
-        if name in ['data', 'units']:
+        if name in ["data", "units"]:
             raise AttributeError()
 
         lookup_name = name
-        if name.startswith('radial_velocity'):
+        if name.startswith("radial_velocity"):
             # HACK: this should be more general...
-            if ('radial_velocity' not in self.data.colnames
-                    and 'dr2_radial_velocity' in self.data.colnames):
-                lookup_name = f'dr2_{name}'
+            if (
+                "radial_velocity" not in self.data.colnames
+                and "dr2_radial_velocity" in self.data.colnames
+            ):
+                lookup_name = f"dr2_{name}"
 
         coldata = self.data[lookup_name]
-        if hasattr(coldata, 'mask') and coldata.mask is not None:
+        if hasattr(coldata, "mask") and coldata.mask is not None:
             arr = coldata.filled(self._fill_values.get(coldata.dtype.char, None))
         else:
             arr = coldata
@@ -287,15 +283,16 @@ class GaiaData:
 
     def __setattr__(self, name, val):
 
-        if name in ['data', 'units']:
+        if name in ["data", "units"]:
             # needs to be here to catch the first time we enter this func.
             super().__setattr__(name, val)
 
         elif name in self.units:
-            if not hasattr(val, 'unit'):
-                raise ValueError('To set data for column "{0}", you must '
-                                 'provide a Quantity-like object (with units).'
-                                 .format(name))
+            if not hasattr(val, "unit"):
+                raise ValueError(
+                    'To set data for column "{0}", you must '
+                    "provide a Quantity-like object (with units).".format(name)
+                )
             self.data[name] = val
             self.units[name] = val.unit
 
@@ -310,13 +307,13 @@ class GaiaData:
 
     def __getitem__(self, slc):
         if isinstance(slc, int):
-            slc = slice(slc, slc+1)
+            slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
             return self.__getattr__(slc)
         return self.__class__(self.data[slc])
 
     def __setitem__(self, name, val):
-        if hasattr(val, 'unit'):
+        if hasattr(val, "unit"):
             self.data[name] = val.value
             self.units[name] = val.unit
         else:
@@ -326,9 +323,9 @@ class GaiaData:
         return len(self.data)
 
     def __str__(self):
-        names = ['ra', 'dec', 'parallax', 'pmra', 'pmdec']
+        names = ["ra", "dec", "parallax", "pmra", "pmdec"]
         if self._has_rv:
-            names.append('radial_velocity')
+            names.append("radial_velocity")
         return str(self.data[names])
 
     def __repr__(self):
@@ -344,8 +341,9 @@ class GaiaData:
         return np.vstack((self.pmra.value, self.pmdec.to(_u).value)).T * _u
 
     @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
-    def get_distance(self, min_parallax=None, parallax_fill_value=np.nan,
-                     allow_negative=False):
+    def get_distance(
+        self, min_parallax=None, parallax_fill_value=np.nan, allow_negative=False
+    ):
         """Compute distance from parallax (by inverting the parallax) using
         `~astropy.coordinates.Distance`.
 
@@ -409,11 +407,11 @@ class GaiaData:
         parallax as the distance. Has shape `(nrows, 2)`
         """
         d = self.distance
-        vra = (self.pmra * d).to(u.km/u.s, u.dimensionless_angles()).value
-        vdec = (self.pmdec * d).to(u.km/u.s, u.dimensionless_angles()).value
-        return np.vstack((vra, vdec)).T * u.km/u.s
+        vra = (self.pmra * d).to(u.km / u.s, u.dimensionless_angles()).value
+        vdec = (self.pmdec * d).to(u.km / u.s, u.dimensionless_angles()).value
+        return np.vstack((vra, vdec)).T * u.km / u.s
 
-    def get_cov(self, RAM_threshold=1*u.gigabyte, units=None):
+    def get_cov(self, RAM_threshold=1 * u.gigabyte, units=None):
         """
         The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses
@@ -438,34 +436,36 @@ class GaiaData:
             specified threshold. Set to ``None`` to disable this checking.
         """
 
-        if 'cov' in self._cache:
-            if units == self._cache['cov_units']:
-                return self._cache['cov']
+        if "cov" in self._cache:
+            if units == self._cache["cov_units"]:
+                return self._cache["cov"]
 
         if RAM_threshold is not None:
             # Raise error if the user is going to blow up their RAM
-            estimated_RAM = 6 * 6 * len(self) * 8*u.bit
+            estimated_RAM = 6 * 6 * len(self) * 8 * u.bit
             if estimated_RAM > RAM_threshold:
-                raise RuntimeError('Estimated RAM usage for generating '
-                                   'covariance matrices is larger than the '
-                                   'specified threshold. Use the argument: '
-                                   '`RAM_threshold=None` to disable this check')
+                raise RuntimeError(
+                    "Estimated RAM usage for generating "
+                    "covariance matrices is larger than the "
+                    "specified threshold. Use the argument: "
+                    "`RAM_threshold=None` to disable this check"
+                )
 
         if units is None:
             units = dict()
-        units.setdefault('ra', u.deg)
-        units.setdefault('dec', u.deg)
-        units.setdefault('parallax', u.mas)
-        units.setdefault('pmra', u.mas/u.yr)
-        units.setdefault('pmdec', u.mas/u.yr)
-        units.setdefault('radial_velocity', u.km/u.s)
+        units.setdefault("ra", u.deg)
+        units.setdefault("dec", u.deg)
+        units.setdefault("parallax", u.mas)
+        units.setdefault("pmra", u.mas / u.yr)
+        units.setdefault("pmdec", u.mas / u.yr)
+        units.setdefault("radial_velocity", u.km / u.s)
 
         # The full returned matrix
         C = np.zeros((len(self), 6, 6))
 
         # We handle radial_velocity separately below - doesn't have correlation
         # coefficients with the astrometric parameters
-        names = ['ra', 'dec', 'parallax', 'pmra', 'pmdec']
+        names = ["ra", "dec", "parallax", "pmra", "pmdec"]
 
         # pre-load the diagonal
         for i, name in enumerate(names):
@@ -476,7 +476,7 @@ class GaiaData:
                 C[:, i, i] = np.nan
 
         if self._has_rv:
-            name = 'radial_velocity'
+            name = "radial_velocity"
             err = getattr(self, name + "_error")
             C[:, 5, 5] = err.to(units[name]).value ** 2
         else:
@@ -499,10 +499,10 @@ class GaiaData:
                 C[:, i, j] = corr * np.sqrt(C[:, i, i] * C[:, j, j])
                 C[:, j, i] = C[:, i, j]
 
-        self._cache['cov'] = C
-        self._cache['cov_units'] = units
+        self._cache["cov"] = C
+        self._cache["cov_units"] = units
 
-        return self._cache['cov']
+        return self._cache["cov"]
 
     def get_ebv(self, dustmaps_cls=None):
         """Compute the E(B-V) reddening at this location
@@ -517,6 +517,7 @@ class GaiaData:
         """
         if dustmaps_cls is None:
             from dustmaps.sfd import SFDQuery
+
             dustmaps_cls = SFDQuery
 
         c = self.get_skycoord(distance=False)
@@ -539,25 +540,25 @@ class GaiaData:
         A_BP
         A_RP
         """
-        if 'ebv' not in self._cache:
+        if "ebv" not in self._cache:
             if ebv is None:
-                self._cache['ebv'] = self.get_ebv(dustmaps_cls=dustmaps_cls)
+                self._cache["ebv"] = self.get_ebv(dustmaps_cls=dustmaps_cls)
             else:
-                self._cache['ebv'] = ebv
+                self._cache["ebv"] = ebv
 
-        if 'A_G' not in self._cache:
-            A_G, A_B, A_R = get_ext(self.phot_g_mean_mag.value,
-                                    self.phot_bp_mean_mag.value,
-                                    self.phot_rp_mean_mag.value,
-                                    self._cache['ebv'])
+        if "A_G" not in self._cache:
+            A_G, A_B, A_R = get_ext_dr2_Babusiaux(
+                self.phot_g_mean_mag.value,
+                self.phot_bp_mean_mag.value,
+                self.phot_rp_mean_mag.value,
+                self._cache["ebv"],
+            )
 
-            self._cache['A_G'] = A_G * u.mag
-            self._cache['A_B'] = A_B * u.mag
-            self._cache['A_R'] = A_R * u.mag
+            self._cache["A_G"] = A_G * u.mag
+            self._cache["A_B"] = A_B * u.mag
+            self._cache["A_R"] = A_R * u.mag
 
-        return (self._cache['A_G'],
-                self._cache['A_B'],
-                self._cache['A_R'])
+        return (self._cache["A_G"], self._cache["A_B"], self._cache["A_R"])
 
     def get_G0(self, *args, **kwargs):
         """Return the extinction-corrected G-band magnitude. Any arguments are
@@ -580,8 +581,7 @@ class GaiaData:
 
     def get_uwe(self):
         """Compute and return the unit-weight error."""
-        return np.sqrt(self.astrometric_chi2_al /
-                       (self.astrometric_n_good_obs_al-5))
+        return np.sqrt(self.astrometric_chi2_al / (self.astrometric_n_good_obs_al - 5))
 
     def get_ruwe(self):
         """Compute and return the renormalized unit-weight error."""
@@ -604,8 +604,9 @@ class GaiaData:
         """
         return self.get_skycoord()
 
-    def get_skycoord(self, distance=None, radial_velocity=None,
-                     ref_epoch=REF_EPOCH[LATEST_RELEASE]):
+    def get_skycoord(
+        self, distance=None, radial_velocity=None, ref_epoch=REF_EPOCH[LATEST_RELEASE]
+    ):
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
@@ -636,49 +637,49 @@ class GaiaData:
             The coordinate object constructed from the input Gaia data.
         """
         _coord_opts = (distance, radial_velocity)
-        if 'coord' in self._cache:
+        if "coord" in self._cache:
             try:
-                _check = self._cache['coord_opts'] == _coord_opts
+                _check = self._cache["coord_opts"] == _coord_opts
             except ValueError:  # array passed for distance or radial_velocity
                 _check = False
 
             if _check:
-                return self._cache['coord']
+                return self._cache["coord"]
 
         kw = dict()
         if self._has_rv:
-            kw['radial_velocity'] = self.radial_velocity
+            kw["radial_velocity"] = self.radial_velocity
 
         # Reference epoch
-        if 'ref_epoch' in self.data.colnames:
-            obstime = Time(self.ref_epoch.value, format='jyear')
+        if "ref_epoch" in self.data.colnames:
+            obstime = Time(self.ref_epoch.value, format="jyear")
         else:
-            obstime = Time(ref_epoch, format='jyear')
+            obstime = Time(ref_epoch, format="jyear")
 
-        kw['obstime'] = obstime
+        kw["obstime"] = obstime
 
         if radial_velocity is not False and radial_velocity is not None:
             if isinstance(radial_velocity, str):
-                kw['radial_velocity'] = self[radial_velocity]
+                kw["radial_velocity"] = self[radial_velocity]
             else:
-                kw['radial_velocity'] = radial_velocity
-        elif radial_velocity is False and 'radial_velocity' in kw:
-            kw.pop('radial_velocity')
+                kw["radial_velocity"] = radial_velocity
+        elif radial_velocity is False and "radial_velocity" in kw:
+            kw.pop("radial_velocity")
 
         if distance is None:
-            kw['distance'] = self.distance
+            kw["distance"] = self.distance
         elif distance is not False and distance is not None:
             if isinstance(distance, str):
-                kw['distance'] = self[distance]
+                kw["distance"] = self[distance]
             else:
-                kw['distance'] = distance
+                kw["distance"] = distance
 
-        self._cache['coord'] = coord.SkyCoord(ra=self.ra, dec=self.dec,
-                                              pm_ra_cosdec=self.pmra,
-                                              pm_dec=self.pmdec, **kw)
-        self._cache['coord_opts'] = _coord_opts
+        self._cache["coord"] = coord.SkyCoord(
+            ra=self.ra, dec=self.dec, pm_ra_cosdec=self.pmra, pm_dec=self.pmdec, **kw
+        )
+        self._cache["coord_opts"] = _coord_opts
 
-        return self._cache['coord']
+        return self._cache["coord"]
 
     def get_error_samples(self, size=1, rnd=None):
         """Generate a sampling from the Gaia error distribution for each source.
@@ -709,18 +710,19 @@ class GaiaData:
 
         C = self.get_cov().copy()
         rv_mask = ~np.isfinite(C[:, 5, 5])
-        C[rv_mask, 5, 5] = 0.
+        C[rv_mask, 5, 5] = 0.0
 
         arrs = []
-        for k, unit in self._cache['cov_units'].items():
+        for k, unit in self._cache["cov_units"].items():
             arrs.append(getattr(self, k).to_value(unit))
         y = np.stack(arrs).T
 
-        samples = np.array([rnd.multivariate_normal(y[i], C[i], size=size)
-                            for i in range(len(y))])
+        samples = np.array(
+            [rnd.multivariate_normal(y[i], C[i], size=size) for i in range(len(y))]
+        )
 
         d = self.data.copy()
-        for i, (k, unit) in enumerate(self._cache['cov_units'].items()):
+        for i, (k, unit) in enumerate(self._cache["cov_units"].items()):
             d[k] = samples[..., i] * unit
 
         return self.__class__(d)

@@ -1,9 +1,10 @@
 # Third-party
 import numpy as np
 
-__all__ = ['get_ext']
+__all__ = ['get_ext_dr2_Babusiaux']
 
-def get_ext(G, bp, rp, ebv, maxnit=8):
+
+def get_ext_dr2_Babusiaux(G, bp, rp, ebv, maxnit=8):
     """ Compute the Gaia extinctions assuming relations from Babusieux
     Arguments: G, bp, rp, E(B-V)
     maxnit -- number of iterations
