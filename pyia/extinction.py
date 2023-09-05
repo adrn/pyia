@@ -1,6 +1,10 @@
 # Third-party
 import numpy as np
 
+
+# https://github.com/mfouesneau/dustapprox/
+# https://mfouesneau.github.io/dustapprox/
+
 __all__ = ['get_ext_dr2_Babusiaux']
 
 
