@@ -739,19 +739,18 @@ class GaiaData:
     ) -> "GaiaData":
         """Generate a sampling from the Gaia error distribution for each source.
 
-        This function constructs the astrometric covariance matrix for each
-        source and generates a specified number of random samples from the error
-        distribution for each source. This does not handle spatially-dependent
-        correlations. Samplings generated with this method can be used to, e.g.,
-        propagate the Gaia errors through coordinate transformations or
-        analyses.
+        This function constructs the astrometric covariance matrix for each source and
+        generates a specified number of random samples from the error distribution for
+        each source. This does not handle spatially-dependent correlations. Samplings
+        generated with this method can be used to, e.g., propagate the Gaia errors
+        through coordinate transformations or analyses.
 
         Parameters
         ----------
         size : int
             The number of random samples per source to generate.
         rng : int, ``numpy.random.Generator``, optional
-            The random number generator or an intege seed.
+            The random number generator or an integer seed.
 
         Returns
         -------
