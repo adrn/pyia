@@ -271,7 +271,7 @@ class GaiaData:
     ##########################################################################
     # Python internal
     #
-    def __getattr__(self, name: Any) -> Union[npt.array, u.Quantity]:
+    def __getattr__(self, name: Any) -> Union[npt.NDArray, u.Quantity]:
         # to prevent recursion errors:
         # nedbatchelder.com/blog/201010/surprising_getattr_recursion.html
         if name in ["data", "units"]:
@@ -322,7 +322,7 @@ class GaiaData:
     def __dir__(self):
         return super().__dir__() + [str(k) for k in self.data.columns]
 
-    def __getitem__(self, slc: Union[int, slice, npt.array]) -> "GaiaData":
+    def __getitem__(self, slc: Union[int, slice, npt.NDArray]) -> "GaiaData":
         if isinstance(slc, int):
             slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
@@ -455,7 +455,7 @@ class GaiaData:
         self,
         RAM_threshold: Optional[u.Quantity] = 1 * u.gigabyte,
         units: Optional[dict] = None,
-    ) -> tuple[npt.array, dict[str, u.Unit]]:
+    ) -> tuple[npt.NDArray, dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need
         covariance matrices. This converts the data provided by Gaia into covariance
@@ -545,7 +545,7 @@ class GaiaData:
 
         return self._cache["cov"], units
 
-    def get_ebv(self, dustmaps_cls=None) -> npt.array:
+    def get_ebv(self, dustmaps_cls=None) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -564,7 +564,7 @@ class GaiaData:
         c = self.get_skycoord(distance=False)
         return dustmaps_cls().query(c)
 
-    def get_ext(self, ebv=None, dustmaps_cls=None) -> npt.array:
+    def get_ext(self, ebv=None, dustmaps_cls=None) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -628,7 +628,7 @@ class GaiaData:
         """Compute and return the unit-weight error."""
         return np.sqrt(self.astrometric_chi2_al / (self.astrometric_n_good_obs_al - 5))
 
-    def get_ruwe(self) -> npt.array:
+    def get_ruwe(self) -> npt.NDArray:
         """Compute and return the renormalized unit-weight error."""
         if "ruwe" in self.data.colnames:
             return self.ruwe
