@@ -353,7 +353,7 @@ class GaiaData:
     #
     def get_pm(
         self, frame: Optional[Union[str, coord.BaseCoordinateFrame]] = "icrs"
-    ) -> u.Quantity[ang_vel]:
+    ) -> u.Quantity[u.mas / u.yr]:
         """Get the 2D proper motion array in the specified frame
 
         Parameters
@@ -381,7 +381,7 @@ class GaiaData:
         min_parallax: Optional[u.Quantity[angle]] = None,
         parallax_fill_value: Optional[float] = np.nan,
         allow_negative: Optional[bool] = False,
-    ) -> u.Quantity[length]:
+    ) -> u.Quantity[u.kpc]:
         """Compute distance from parallax (by inverting the parallax) using
         `~astropy.coordinates.Distance`.
 
@@ -412,7 +412,7 @@ class GaiaData:
         return coord.Distance(parallax=plx, allow_negative=allow_negative)
 
     @property
-    def distance(self) -> u.Quantity[length]:
+    def distance(self) -> u.Quantity[u.kpc]:
         """Assumes 1/parallax. Has shape `(nrows,)`.
 
         This attribute will raise an error when there are negative or zero
@@ -427,7 +427,7 @@ class GaiaData:
 
     def get_radial_velocity(
         self, fill_value: Optional[float] = None
-    ) -> u.Quantity[vel]:
+    ) -> u.Quantity[u.km / u.s]:
         """Return radial velocity but with invalid values filled with the
         specified fill value.
 
@@ -441,7 +441,7 @@ class GaiaData:
         return rv
 
     @property
-    def vtan(self) -> u.Quantity[vel]:
+    def vtan(self) -> u.Quantity[u.km / u.s]:
         """Tangential velocity computed using the proper motion and inverse parallax as
         the distance. Has shape `(nrows, 2)`
         """
