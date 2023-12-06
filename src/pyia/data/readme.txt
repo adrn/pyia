@@ -9,21 +9,21 @@ For sources without a colour the function u0(G) may be used instead.
 
 Detailed file descriptions:
 
-All files contain comma separated values (CSV) including a single header line 
-with unique column names. The files can be read e.g. in TOPCAT using format 
+All files contain comma separated values (CSV) including a single header line
+with unique column names. The files can be read e.g. in TOPCAT using format
 specification CSV.
- 
-table_u0_g_col.txt (5375015 bytes) is a lookup table for u0(G,C). 
-It has 3 columns (g_mag, bp_rp, u0) and 193251 data lines (+ header) 
+
+table_u0_g_col.txt (5375015 bytes) is a lookup table for u0(G,C).
+It has 3 columns (g_mag, bp_rp, u0) and 193251 data lines (+ header)
 for G = 3.60(0.01)21.00 and C = -1.0(0.1)10.0.
 
-table_u0_g.txt (32502 bytes) is a lookup table for u0(G). 
-It has 2 columns (g_mag, u0) and 1741 data lines (+ header) 
+table_u0_g.txt (32502 bytes) is a lookup table for u0(G).
+It has 2 columns (g_mag, u0) and 1741 data lines (+ header)
 for G = 3.60(0.01)21.00.
 
 table_u0_2D.txt (1782073 bytes) contains exactly the same data as the previous
-two tables, only arranged in a way that may be more convenient in some cases. 
-It has 113 columns (g_mag, u0g, u0m010, u0m009, ... u0p100) and 1741 data lines 
+two tables, only arranged in a way that may be more convenient in some cases.
+It has 113 columns (g_mag, u0g, u0m010, u0m009, ... u0p100) and 1741 data lines
 (+ header) for G = 3.60(0.01)21.00. The columns are:
 g_mag = G magnitude
 u0g = u0(G)
