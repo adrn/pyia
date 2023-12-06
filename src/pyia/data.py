@@ -276,25 +276,19 @@ class GaiaData:
         if name in ["data", "units"]:
             raise AttributeError()
 
-        lookup_name = name
-        # HACK: EDR3 calls this "dr2_radial_velocity"
-        # TODO: replace with idea of setting RV and distance column names above
-        if (
-            name.startswith("radial_velocity")
-            and "radial_velocity" not in self.data.colnames
-            and "dr2_radial_velocity" in self.data.colnames
-        ):
-            lookup_name = f"dr2_{name}"
+        try:
+            coldata = self.data[name]
+            if hasattr(coldata, "mask") and coldata.mask is not None:
+                arr = coldata.filled(_fill_values.get(coldata.dtype.char, None))
+            else:
+                arr = coldata
+            arr = np.asarray(arr)
 
-        coldata = self.data[lookup_name]
-        if hasattr(coldata, "mask") and coldata.mask is not None:
-            arr = coldata.filled(_fill_values.get(coldata.dtype.char, None))
-        else:
-            arr = coldata
-        arr = np.asarray(arr)
-
-        if name in self.units:
-            return arr * self.units[name]
+            if name in self.units:
+                return arr * self.units[name]
+        except Exception as err:
+            msg = "Failed to get attribute."
+            raise AttributeError(msg) from err
 
         return arr
 
