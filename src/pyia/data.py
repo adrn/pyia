@@ -769,7 +769,7 @@ class GaiaData:
         C[rv_mask, 5, 5] = 0.0
 
         arrs = []
-        for k, unit in C_units:
+        for k, unit in C_units.items():
             arrs.append(getattr(self, k).to_value(unit))
         y = np.stack(arrs).T
 
