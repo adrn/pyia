@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Any, Union
+from typing import Any
 
 # Third-party
 import astropy.coordinates as coord
@@ -105,7 +105,7 @@ class GaiaData:
     """
 
     def __init__(
-        self, data: Union[Table, str, pathlib.Path, dict[str, Any]], **kwargs: Any
+        self, data: Table | str | pathlib.Path | dict[str, Any], **kwargs: Any
     ) -> None:
         if not isinstance(data, Table):
             if isinstance(data, (str, pathlib.Path)):
@@ -378,7 +378,8 @@ class GaiaData:
             )
         return pm
 
-    @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
+    # TODO: re-enable this when Astropy adds support for __future__ annotations
+    # @u.quantity_input(equivalencies=u.parallax())
     def get_distance(
         self,
         min_parallax: u.Quantity[angle] | None = None,
