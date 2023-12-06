@@ -7,7 +7,8 @@ pyia: A Python package for working with data from the Gaia mission
 
 from __future__ import annotations
 
+from . import data
 from ._version import version as __version__
 from .data import GaiaData
 
-__all__ = ["__version__", "GaiaData"]
+__all__ = ["__version__", "GaiaData", "data"]

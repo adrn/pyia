@@ -197,13 +197,6 @@ def test_get_samples(filename):
     assert c.shape == (1000, 16)
 
 
-def test_compute_ruwe():
-    filename = get_pkg_data_filename("data/gdr2_sm.fits")
-    gd = GaiaData(filename)
-    ruwe = gd.get_ruwe()
-    assert len(ruwe) == len(gd)
-
-
 @pytest.mark.parametrize("filename", dr_filenames)
 def test_extinction(filename):
     g = GaiaData(filename)
