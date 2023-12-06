@@ -110,6 +110,7 @@ disallow_incomplete_defs = false
 module = "pyia.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
 module = [

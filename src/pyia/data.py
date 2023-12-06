@@ -377,8 +377,7 @@ class GaiaData:
             )
         return pm
 
-    # TODO: re-enable this when Astropy adds support for __future__ annotations
-    # @u.quantity_input(equivalencies=u.parallax())
+    @u.quantity_input  # (equivalencies=u.parallax())
     def get_distance(
         self,
         min_parallax: Optional[u.Quantity[angle]] = None,
