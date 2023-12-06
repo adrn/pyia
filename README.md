@@ -27,12 +27,11 @@
 
 [![Documentation Status][rtd-badge]][rtd-link]
 
-The documentation for ``pyia`` is hosted on `Read the Docs <http://pyia.rtfd.io>`_.
-
+The documentation for `pyia` is hosted on [Read the Docs](http://pyia.rtfd.io).
 
 ## Installation and Dependencies
 
-The recommended way to install ``pyia`` is using ``pip`` to install the latest
+The recommended way to install `pyia` is using `pip` to install the latest
 development version:
 
     pip install git+https://github.com/adrn/pyia
@@ -44,8 +43,8 @@ or, to install the latest stable version:
 [![PyPI version][pypi-version]][pypi-link]
 [![PyPI platforms][pypi-platforms]][pypi-link]
 
-See the `installation instructions <http://pyia.rtfd.io/en/latest/install.html>`_ in the
-`documentation <http://pyia.rtfd.io>`_ for more information.
+See the [installation instructions](http://pyia.rtfd.io/en/latest/install.html)
+in the [documentation](http://pyia.rtfd.io) for more information.
 
 ## Attribution
 
@@ -69,5 +68,5 @@ If you find this package useful, consider citing the Zenodo record:
 
 Copyright 2017-2024 Adrian Price-Whelan and contributors.
 
-``Pyia`` is free software made available under the MIT License. For details see the
-`LICENSE <https://github.com/adrn/pyia/blob/master/LICENSE>`_ file.
+`Pyia` is free software made available under the MIT License. For details see
+the [LICENSE](https://github.com/adrn/pyia/blob/master/LICENSE) file.

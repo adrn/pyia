@@ -1,3 +1,5 @@
+# ruff: noqa
+# type: ignore
 """
 Functions for handling the tables listing the normalization factor u0 needed to calculate the
 renormalized unit weight error (RUWE). The tables are provided on the Gaia DR2 Known Issues pages
@@ -5,14 +7,18 @@ renormalized unit weight error (RUWE). The tables are provided on the Gaia DR2 K
 
 Anthony Brown Oct 2018 - Oct 2018
 """
+from __future__ import annotations
 
 import numpy as np
 from astropy.utils.data import get_pkg_data_filename
+
 try:
-    from scipy.interpolate import interp1d, RectBivariateSpline
+    from scipy.interpolate import RectBivariateSpline, interp1d
+
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
+
 
 class U0Interpolator:
     """
@@ -27,8 +33,10 @@ class U0Interpolator:
         """
 
         if not HAS_SCIPY:
-            raise RuntimeError("Computing the renormalized unit weight error, "
-                               "RUWE, required scipy to be installed.")
+            raise RuntimeError(
+                "Computing the renormalized unit weight error, "
+                "RUWE, required scipy to be installed."
+            )
 
         ngmagbins = 1741
         ncolorbins = 111
@@ -37,20 +45,26 @@ class U0Interpolator:
         self.minbprp = -1.0
         self.maxbprp = 10.0
 
-        filename = get_pkg_data_filename('data/table_u0_g_col.txt')
-        u0data = np.genfromtxt(filename, names=['g_mag', 'bp_rp', 'u0'], skip_header=1, delimiter=',')
-        gmagmesh = np.reshape(u0data['g_mag'], (ngmagbins, ncolorbins))
-        bprpmesh = np.reshape(u0data['bp_rp'], (ngmagbins, ncolorbins))
-        u0mesh = np.reshape(u0data['u0'], (ngmagbins, ncolorbins))
+        filename = get_pkg_data_filename("data/table_u0_g_col.txt")
+        u0data = np.genfromtxt(
+            filename, names=["g_mag", "bp_rp", "u0"], skip_header=1, delimiter=","
+        )
+        gmagmesh = np.reshape(u0data["g_mag"], (ngmagbins, ncolorbins))
+        bprpmesh = np.reshape(u0data["bp_rp"], (ngmagbins, ncolorbins))
+        u0mesh = np.reshape(u0data["u0"], (ngmagbins, ncolorbins))
 
         gmag = gmagmesh[:, 0]
         bprp = bprpmesh[0, :]
 
-        self.gbprpinterpolator = RectBivariateSpline(gmag, bprp, u0mesh, kx=1, ky=1, s=0)
+        self.gbprpinterpolator = RectBivariateSpline(
+            gmag, bprp, u0mesh, kx=1, ky=1, s=0
+        )
 
-        filename = get_pkg_data_filename('data/table_u0_g.txt')
-        u0data = np.genfromtxt(filename, names=['g_mag', 'u0'], skip_header=1, delimiter=',')
-        self.ginterpolator = interp1d(u0data['g_mag'], u0data['u0'], bounds_error=True)
+        filename = get_pkg_data_filename("data/table_u0_g.txt")
+        u0data = np.genfromtxt(
+            filename, names=["g_mag", "u0"], skip_header=1, delimiter=","
+        )
+        self.ginterpolator = interp1d(u0data["g_mag"], u0data["u0"], bounds_error=True)
 
     def get_u0_g_col(self, gmag, bprp, asgrid=False):
         """

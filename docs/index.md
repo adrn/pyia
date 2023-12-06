@@ -1,4 +1,4 @@
-# pyia: a Python package for working with *Gaia* data
+# pyia: a Python package for working with _Gaia_ data
 
 ```{include} ../README.md
 :start-after: <!-- SPHINX-START -->
@@ -6,16 +6,16 @@
 
 Source code [on GitHub](https://github.com/adrn/pyia>).
 
-What ``pyia`` can do for you:
+What `pyia` can do for you:
 
-* Access to Gaia data columns as `~astropy.units.Quantity` objects,
-  i.e., with units (e.g., ``data.parallax`` will have units 'milliarcsecond')
-* Construct covariance matrices for Gaia data (`pyia.GaiaData.get_cov()`)
-* Generate random samples from the Gaia error distribution per source
+- Access to Gaia data columns as `~astropy.units.Quantity` objects, i.e., with
+  units (e.g., `data.parallax` will have units 'milliarcsecond')
+- Construct covariance matrices for Gaia data (`pyia.GaiaData.get_cov()`)
+- Generate random samples from the Gaia error distribution per source
   (`pyia.GaiaData.get_error_samples()`)
-* Create `~astropy.coordinates.SkyCoord` objects from Gaia data
+- Create `~astropy.coordinates.SkyCoord` objects from Gaia data
   (`pyia.GaiaData.skycoord`)
-* Execute simple (small) remote queries via the Gaia science archive and
+- Execute simple (small) remote queries via the Gaia science archive and
   automatically fetch the results (`pyia.GaiaData.from_query()`)
 
 ## Installation
@@ -37,9 +37,9 @@ instance of this class gives you access to the features mentioned above.
 `~pyia.GaiaData` objects can be created either by passing in a string filename,
 by passing in a pre-loaded `~astropy.table.Table` or `~pandas.DataFrame` object,
 or by executing a remote query with `~pyia.GaiaData.from_query()`. Let's now
-execute some imports  we'll need later:
+execute some imports we'll need later:
 
-```python
+```pycon
 >>> import astropy.units as u
 >>> import numpy as np
 >>> from pyia import GaiaData
@@ -48,7 +48,7 @@ execute some imports  we'll need later:
 This code block can be ignored and is only used to set up paths to data files
 used in the examples below:
 
-```python
+```pycon
 >>> from pyia import __file__
 >>> import pathlib
 >>> data_path = pathlib.Path(pyia.__file__).parent / 'tests/data'
@@ -56,21 +56,20 @@ used in the examples below:
 
 If you've already downloaded some Gaia data in tabular format and saved it to a
 file on disk, you can create an instance by passing the path to the file. As an
-example, I've created a small subset of Gaia DR2 data downloaded from the
-Gaia science archive to use for examples below. This subset was retrieved using
-the following query:
+example, I've created a small subset of Gaia DR2 data downloaded from the Gaia
+science archive to use for examples below. This subset was retrieved using the
+following query:
 
-```python
+```pycon
 >>> g = GaiaData.from_query(
     """SELECT TOP 100 * FROM gaiadr2.gaia_source
        WHERE parallax_over_error > 10;"""
 >>> ) # doctest: +SKIP
 ```
 
-This data is also provided with `pyia`, so we'll load the cached version
-here:
+This data is also provided with `pyia`, so we'll load the cached version here:
 
-```python
+```pycon
 >>> g = GaiaData(f'{data_path}/gdr2_sm.fits')
 >>> g
 <GaiaData: 100 rows>
@@ -78,7 +77,7 @@ here:
 
 As mentioned above, you can also pass in pre-loaded data:
 
-```python
+```pycon
 >>> from astropy.table import Table
 >>> tbl = Table.read(f'{data_path}/gdr2_sm.fits')
 >>> GaiaData(tbl)
@@ -89,7 +88,7 @@ With this object, we can access any of the Gaia table column names using
 attribute access. By using the attribute, we get back an
 `~astropy.units.Quantity` object with the correct units:
 
-```python
+```pycon
 >>> g.parallax[:4] # doctest: +FLOAT_CMP
 <Quantity [0.22974425, 0.70930482, 0.47377294, 0.8412405 ] marcsec>
 >>> g.phot_g_mean_mag[:4] # doctest: +FLOAT_CMP
@@ -99,7 +98,7 @@ attribute access. By using the attribute, we get back an
 To access the raw data (stored internally as an Astropy `~astropy.table.Table`),
 you can use the `.data` attribute:
 
-```python
+```pycon
 >>> type(g.data)
 <class 'astropy.table.table.Table'>
 ```
@@ -107,7 +106,7 @@ you can use the `.data` attribute:
 The `~pyia.GaiaData` object supports indexing and slicing like normal Python
 lists / Numpy arrays / Astropy tables:
 
-```python
+```pycon
 >>> g[:4]
 <GaiaData: 4 rows>
 >>> g[g.parallax < 0.5*u.mas]
@@ -119,7 +118,7 @@ object. As a demo, we'll just get the covariance matrix for the first 2 rows
 (note that in the mock DR2 sample, all off-diagonal terms are set to nan, so
 only the diagonal elements exist!):
 
-```python
+```pycon
 >>> cov = g[:2].get_cov()
 >>> cov.shape
 (2, 6, 6)
@@ -155,7 +154,7 @@ By default, the returned units are: (deg, deg, milliarcsecond,
 milliarcsecond/year, milliarcsecond/year, km/s), but these can be changed by
 passing in a dictionary with the new desired units:
 
-```python
+```pycon
 >>> cov2 = g[:2].get_cov(units=dict(ra=u.radian, dec=u.radian))
 >>> cov[0, 0, 2] # doctest: +FLOAT_CMP
 -2.957283073704542e-11
@@ -166,7 +165,7 @@ passing in a dictionary with the new desired units:
 We can also retrieve other useful quantities from this object, like a 2D proper
 motion array with units (as a `~astropy.units.Quantity`):
 
-```python
+```pycon
 >>> g[:4].pm # doctest: +FLOAT_CMP
 <Quantity [[ -7.08493408,   1.49887161],
            [-10.43896891,  -7.55166654],
@@ -176,7 +175,7 @@ motion array with units (as a `~astropy.units.Quantity`):
 
 Finally, we can retrieve a `~astropy.coordinates.SkyCoord` object for all rows:
 
-```python
+```pycon
 >>> c = g.skycoord
 >>> c[:4] # doctest: +FLOAT_CMP
 <SkyCoord (ICRS): (ra, dec, distance) in (deg, deg, pc)
@@ -200,7 +199,7 @@ corresponding distance!). We may want to fill those values with NaN's or just
 filter them out. Let's work now with a small subset of the Gaia data that
 contains some negative parallax measurements:
 
-```python
+```pycon
 >>> g = GaiaData(f'{data_path}/gdr2_sm_negplx.fits')
 >>> len(g)
 8
@@ -212,7 +211,7 @@ So of the 8 sources, 4 have parallax values that physically can't be converted
 into distance values. If we try to get a coordinate object for the whole table,
 we will therefore get an error from `astropy.coordinates`:
 
-```python
+```pycon
 >>> g.get_skycoord() # doctest: +SKIP
 ...
 ERROR: ValueError: Some parallaxes are negative, which are notinterpretable as distances. See the discussion in this paper: https://arxiv.org/abs/1507.02105 . If you want parallaxes to pass through, with negative parallaxes instead becoming NaN, use the `allow_negative=True` argument. [astropy.coordinates.distances]
@@ -221,17 +220,17 @@ ERROR: ValueError: Some parallaxes are negative, which are notinterpretable as d
 To get distance values for this table and fill the unmeasured parallaxes, we can
 instead use the `.get_distance()` method:
 
-```python
+```pycon
 >>> dist = g.get_distance(min_parallax=1e-3*u.mas)
 >>> dist # doctest: +FLOAT_CMP
 <Distance [          nan,           nan, 2408.32836149,           nan,
            4310.30352187,           nan, 1273.15031694,  873.80934793] pc>
 ```
 
-We can then pass in our filled distance values to `get_skycoord()` to retrieve
-a coordinate object with any invalid distance values filled:
+We can then pass in our filled distance values to `get_skycoord()` to retrieve a
+coordinate object with any invalid distance values filled:
 
-```python
+```pycon
 >>> c = g.get_skycoord(distance=dist)
 ```
 
@@ -240,7 +239,7 @@ the distance values as real with subsequent analysis. However, the NaN distances
 will cause any coordinate transformations to fail (the transformation will fill
 all values with NaN when a distance is NaN):
 
-```python
+```pycon
 >>> c = g.get_skycoord(distance=dist)
 >>> c.galactic # doctest: +FLOAT_CMP
 <SkyCoord (Galactic): (l, b, distance) in (deg, deg, pc)
@@ -260,7 +259,7 @@ all values with NaN when a distance is NaN):
 We can therefore fill any invalid parallax and radial velocity measurements by
 passing in custom distance and/or radial velocity data to `get_skycoord()`:
 
-```python
+```pycon
 >>> c = g.get_skycoord(distance=g.get_distance(min_parallax=1e-3*u.mas,
 ...                                            parallax_fill_value=1e-5*u.mas),
 ...                    radial_velocity=g.get_radial_velocity(fill_value=1e8*u.km/u.s))
@@ -291,28 +290,28 @@ It is sometimes useful to generate random samples from the Gaia error
 distribution for each source. This can be useful when, for example, transforming
 to a new coordinate system when you want to propagate the (correlated!)
 uncertainty in the Gaia data through your analysis. We can generate samples from
-the Gaia error distribution using `pyia`. As an example, we'll work with a
-small subset of the Gaia data that have radial velocity measurements, sub-select
-only nearby sources, and then generate error samples for the sources. We'll then
+the Gaia error distribution using `pyia`. As an example, we'll work with a small
+subset of the Gaia data that have radial velocity measurements, sub-select only
+nearby sources, and then generate error samples for the sources. We'll then
 transform the samples to Galactocentric coordinates to look at the uncertainty
 distribution for the full-space velocity.
 
 First, let's load the data:
 
-```python
+```pycon
 >>> g_rv = GaiaData(f'{data_path}/gdr2_rv_sm.fits')
 ```
 
 All of these sources have measured radial velocities:
 
-```python
+```pycon
 >>> g_rv.radial_velocity[:4] # doctest: +FLOAT_CMP
 <Quantity [  7.89796709,  30.88496542,   3.04709697, -34.91701273] km / s>
 ```
 
 Let's now select only nearby (within 500 pc) sources:
 
-```python
+```pycon
 >>> g_rv = g_rv[g_rv.parallax > 2*u.mas]
 ```
 
@@ -320,7 +319,7 @@ To generate samples from the error distribution, we use the
 `.get_error_samples()` method, and pass in the number of samples to generate
 (here, 256):
 
-```python
+```pycon
 >>> import numpy as np
 >>> g_samples = g_rv.get_error_samples(size=256,
 ...                                    rnd=np.random.RandomState(seed=42))
@@ -330,7 +329,7 @@ Let's now get a `SkyCoord` object to represent the data for these sources and
 samples, and transform to a Galactocentric coordinate frame using the Astropy
 coordinate transformation machinery:
 
-```python
+```pycon
 >>> c_samples = g_samples.get_skycoord()
 >>> import astropy.coordinates as coord
 >>> _ = coord.galactocentric_frame_defaults.set('v4.0')
@@ -340,14 +339,14 @@ coordinate transformation machinery:
 Let's now look at the uncertainty on the magnitude of the total velocity, `v`,
 for each of these sources:
 
-```python
+```pycon
 >>> v = galcen.velocity.norm()
 ```
 
 And finally, let's compute (from the error samples) the uncertainty on the total
 velocity for these sources:
 
-```python
+```pycon
 >>> err_v = np.std(v, axis=1)
 >>> err_v # doctest: +FLOAT_CMP
 <Quantity [1.19963698, 0.90448355, 0.76143172, 0.58234578, 0.56352556,
@@ -359,8 +358,6 @@ velocity for these sources:
 
 Most of these uncertainties are less than 1-2 km/s! These take into account the
 parallax, proper motion, and radial velocity uncertainties provided by Gaia.
-
-
 
 ## Indices and tables
 
