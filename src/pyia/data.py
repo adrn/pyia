@@ -14,8 +14,7 @@ import numpy.typing as npt
 from astropy.table import Column, Table
 from astropy.time import Time
 
-from .extinction import get_ext_dr2_Babusiaux
-from .ruwetools import U0Interpolator
+from pyia.extinction import get_ext_dr2_Babusiaux
 
 __all__ = ["GaiaData"]
 
@@ -150,13 +149,13 @@ class GaiaData:
         )
 
         # For caching later
-        self._cache = {}
+        self._cache: dict[Any, Any] = {}
 
     @classmethod
     def from_query(
         cls,
         query_str: str,
-        login_info: dict | None = None,
+        login_info: dict[str, str] | None = None,
         verbose: bool = False,
     ) -> GaiaData:
         """
@@ -280,14 +279,14 @@ class GaiaData:
             raise AttributeError()
 
         lookup_name = name
-        if name.startswith("radial_velocity"):
-            # HACK: EDR3 calls this "dr2_radial_velocity"
-            # TODO: replace with idea of setting RV and distance column names above
-            if (
-                "radial_velocity" not in self.data.colnames
-                and "dr2_radial_velocity" in self.data.colnames
-            ):
-                lookup_name = f"dr2_{name}"
+        # HACK: EDR3 calls this "dr2_radial_velocity"
+        # TODO: replace with idea of setting RV and distance column names above
+        if (
+            name.startswith("radial_velocity")
+            and "radial_velocity" not in self.data.colnames
+            and "dr2_radial_velocity" in self.data.colnames
+        ):
+            lookup_name = f"dr2_{name}"
 
         coldata = self.data[lookup_name]
         if hasattr(coldata, "mask") and coldata.mask is not None:
@@ -322,10 +321,10 @@ class GaiaData:
         else:
             super().__setattr__(name, val)
 
-    def __dir__(self):
-        return super().__dir__() + [str(k) for k in self.data.columns]
+    def __dir__(self) -> list[str]:
+        return list(super().__dir__()) + [str(k) for k in self.data.columns]
 
-    def __getitem__(self, slc: int | slice | npt.NDArray) -> GaiaData:
+    def __getitem__(self, slc: int | slice | npt.NDArray) -> GaiaData | Any:
         if isinstance(slc, int):
             slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
@@ -458,7 +457,7 @@ class GaiaData:
     def get_cov(
         self,
         RAM_threshold: u.Quantity = 1 * u.gigabyte,
-        units: dict | None = None,
+        units: dict[str, u.Unit] | None = None,
     ) -> tuple[npt.NDArray, dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need
@@ -543,7 +542,7 @@ class GaiaData:
 
         return C, units
 
-    def get_ebv(self, dustmaps_cls=None) -> npt.NDArray:
+    def get_ebv(self, dustmaps_cls: Any | None = None) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -562,7 +561,9 @@ class GaiaData:
         c = self.get_skycoord(distance=False)
         return dustmaps_cls().query(c)
 
-    def get_ext(self, ebv=None, dustmaps_cls=None) -> npt.NDArray:
+    def get_ext(
+        self, ebv: npt.ArrayLike | None = None, dustmaps_cls: Any | None = None
+    ) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -603,23 +604,23 @@ class GaiaData:
         """Return the absolute G-band magnitude."""
         return self.phot_g_mean_mag - self.distmod
 
-    def get_G0(self, *args, **kwargs) -> u.Quantity:
+    def get_G0(self, **kwargs: Any) -> u.Quantity:
         """Return the extinction-corrected G-band magnitude. Any arguments are
         passed to ``get_ext()``.
         """
-        A, _, _ = self.get_ext(*args, **kwargs)
+        A, _, _ = self.get_ext(**kwargs)
         return self.phot_g_mean_mag - A
 
-    def get_BP0(self, *args, **kwargs) -> u.Quantity:
+    def get_BP0(self, **kwargs: Any) -> u.Quantity:
         """Return the extinction-corrected G_BP magnitude. Any arguments are
         passed to ``get_ext()``."""
-        _, A, _ = self.get_ext(*args, **kwargs)
+        _, A, _ = self.get_ext(**kwargs)
         return self.phot_bp_mean_mag - A
 
-    def get_RP0(self, *args, **kwargs) -> u.Quantity:
+    def get_RP0(self, **kwargs: Any) -> u.Quantity:
         """Return the extinction-corrected G_RP magnitude. Any arguments are
         passed to ``get_ext()``."""
-        _, _, A = self.get_ext(*args, **kwargs)
+        _, _, A = self.get_ext(**kwargs)
         return self.phot_rp_mean_mag - A
 
     def get_uwe(self) -> u.Quantity:
@@ -627,15 +628,11 @@ class GaiaData:
         return np.sqrt(self.astrometric_chi2_al / (self.astrometric_n_good_obs_al - 5))
 
     def get_ruwe(self) -> npt.NDArray:
-        """Compute and return the renormalized unit-weight error."""
-        if "ruwe" in self.data.colnames:
-            return self.ruwe
-
-        interp = U0Interpolator()
-
-        bprp = self.phot_bp_mean_mag.value - self.phot_rp_mean_mag.value
-        u0 = interp.get_u0(self.phot_g_mean_mag.value, bprp)
-        return self.get_uwe() / u0
+        msg = (
+            "Use the Gaia DR3 RUWE value instead. This can be accessed with the `.ruwe`"
+            " attribute if it is present in the data table."
+        )
+        raise NotImplementedError(msg)
 
     ##########################################################################
     # Astropy connections
@@ -761,8 +758,7 @@ class GaiaData:
         # here and in get_cov()
         if rng is None:
             rng = np.random.default_rng()
-        elif isinstance(rng, int):
-            rng = np.random.default_rng(rng)
+        rng = np.random.default_rng(rng)
 
         C, C_units = self.get_cov()
         C = C.copy()
@@ -784,7 +780,7 @@ class GaiaData:
 
         return self.__class__(d)
 
-    def filter(self, **kwargs) -> GaiaData:
+    def filter(self, **kwargs: Any) -> GaiaData:
         """
         Filter the data based on columns and data ranges.
 

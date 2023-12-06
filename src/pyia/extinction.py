@@ -1,19 +1,23 @@
 # ruff: noqa
-# type: ignore
 
 # Third-party
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 # https://github.com/mfouesneau/dustapprox/
 # https://mfouesneau.github.io/dustapprox/
 
-__all__ = ["get_ext_dr2_Babusiaux"]
 
-
-def get_ext_dr2_Babusiaux(G, bp, rp, ebv, maxnit=8):
-    """Compute the Gaia extinctions assuming relations from Babusieux
+def get_ext_dr2_Babusiaux(
+    G: npt.ArrayLike,
+    bp: npt.ArrayLike,
+    rp: npt.ArrayLike,
+    ebv: npt.ArrayLike,
+    maxnit: int = 8,
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+    """Compute the Gaia extinctions assuming relations from Babusieux+2018
     Arguments: G, bp, rp, E(B-V)
     maxnit -- number of iterations
     Returns extinction in G, bp, rp
@@ -49,7 +53,7 @@ def get_ext_dr2_Babusiaux(G, bp, rp, ebv, maxnit=8):
     A0 = 3.1 * ebv
     P1 = np.poly1d([c1, c2, c3, c4][::-1])
 
-    def F1(bprp):
+    def F1(bprp: npt.ArrayLike) -> npt.NDArray:
         return (
             np.poly1d([c1, c2, c3, c4][::-1])(bprp)
             + c5 * A0
@@ -57,7 +61,7 @@ def get_ext_dr2_Babusiaux(G, bp, rp, ebv, maxnit=8):
             + c7 * bprp * A0
         )
 
-    def F2(bprp):
+    def F2(bprp: npt.ArrayLike) -> npt.NDArray:
         return (
             np.poly1d([d1, d2, d3, d4][::-1])(bprp)
             + d5 * A0
@@ -65,7 +69,7 @@ def get_ext_dr2_Babusiaux(G, bp, rp, ebv, maxnit=8):
             + d7 * bprp * A0
         )
 
-    def F3(bprp):
+    def F3(bprp: npt.ArrayLike) -> npt.NDArray:
         return (
             np.poly1d([e1, e2, e3, e4][::-1])(bprp)
             + e5 * A0
@@ -86,3 +90,6 @@ def get_ext_dr2_Babusiaux(G, bp, rp, ebv, maxnit=8):
     Abp = F2(curbp) * A0
     Arp = F3(curbp) * A0
     return AG, Abp, Arp
+
+
+__all__ = ["get_ext_dr2_Babusiaux"]

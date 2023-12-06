@@ -24,7 +24,7 @@ dr_filenames = [
 
 
 @pytest.mark.parametrize(
-    "filename,fmt",
+    ("filename", "fmt"),
     [
         (get_pkg_data_filename("data/gdr2_sm.fits"), "fits"),
         (get_pkg_data_filename("data/gdr2_sm.vot"), "votable"),
@@ -67,9 +67,9 @@ def test_slicing_getattr(filename):
 
     assert "parallax" in dir(gd)
     assert "source_id" in dir(gd)
-    gd.source_id
-    gd.parallax
-    gd.pmra
+    gd.source_id  # noqa: B018
+    gd.parallax  # noqa: B018
+    gd.pmra  # noqa: B018
 
     gd["source_id"]
     gd["parallax"]
