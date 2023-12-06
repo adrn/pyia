@@ -104,15 +104,13 @@ class GaiaData:
         `astropy.table.Table.read`.
     """
 
-    # Mapping from key = dtype chars to value = fill value
-    # https://numpy.org/doc/stable/reference/arrays.dtypes.html
-    _fill_values = {"i": -1, "u": 0, "f": np.nan, "d": np.nan, "U": "", "S": ""}
-
     def __init__(
         self, data: Union[Table, str, pathlib.Path, dict[str, Any]], **kwargs: Any
     ) -> None:
         if not isinstance(data, Table):
             if isinstance(data, (str, pathlib.Path)):
+                if any("fits" in x for x in pathlib.Path(data).suffixes):
+                    kwargs.setdefault("unit_parse_strict", "silent")
                 data = Table.read(data, **kwargs)
 
             else:
@@ -769,12 +767,12 @@ class GaiaData:
         elif isinstance(rng, int):
             rng = np.random.default_rng(rng)
 
-        C = self.get_cov().copy()
+        C, C_units = self.get_cov().copy()
         rv_mask = ~np.isfinite(C[:, 5, 5])
         C[rv_mask, 5, 5] = 0.0
 
         arrs = []
-        for k, unit in self._cache["cov_units"].items():
+        for k, unit in C_units:
             arrs.append(getattr(self, k).to_value(unit))
         y = np.stack(arrs).T
 
@@ -783,7 +781,7 @@ class GaiaData:
         )
 
         d = self.data.copy()
-        for i, (k, unit) in enumerate(self._cache["cov_units"].items()):
+        for i, (k, unit) in enumerate(C_units.items()):
             d[k] = samples[..., i] * unit
 
         return self.__class__(d)
