@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 # Third-party
 import astropy.coordinates as coord
@@ -150,14 +150,14 @@ class GaiaData:
         )
 
         # For caching later
-        self._cache = dict()
+        self._cache = {}
 
     @classmethod
     def from_query(
         cls,
         query_str: str,
-        login_info: Optional[dict] = None,
-        verbose: Optional[bool] = False,
+        login_info: dict | None = None,
+        verbose: bool = False,
     ) -> GaiaData:
         """
         Run the specified query and return a `GaiaData` instance with the
@@ -186,13 +186,13 @@ class GaiaData:
         """
         try:
             from astroquery.gaia import Gaia
-        except ImportError:
-            raise ImportError(
-                "Failed to import astroquery. To use the "
-                "from_query() classmethod, you must first"
-                " install astroquery, e.g., with pip: "
-                "\n\tpip install astroquery"
+        except ImportError as err:
+            msg = (
+                "Failed to import astroquery. To use the from_query() classmethod, you "
+                "must first install astroquery, e.g., with pip: \n\tpip install "
+                "astroquery"
             )
+            raise ImportError(msg) from err
 
         if login_info is not None:
             Gaia.login(**login_info)
@@ -206,8 +206,8 @@ class GaiaData:
     def from_source_id(
         cls,
         source_id: int,
-        source_id_dr: Optional[str] = None,
-        data_dr: Optional[str] = None,
+        source_id_dr: str | None = None,
+        data_dr: str | None = None,
         **kwargs: Any,
     ) -> GaiaData:
         """Retrieve data from a DR for a given Gaia source_id in a DR.
@@ -258,10 +258,9 @@ class GaiaData:
             join_table = join_tables[dr1][dr2]
             source_id_pref = source_id_prefixes[source_id_dr]
             data_pref = source_id_prefixes[data_dr]
-        except KeyError:
-            raise KeyError(
-                f"Failed to find join table for {source_id_dr} " f"to {data_dr}"
-            )
+        except KeyError as err:
+            msg = f"Failed to find join table for {source_id_dr} " f"to {data_dr}"
+            raise KeyError(msg) from err
 
         query_str = f"""
             SELECT * FROM gaia{data_dr}.gaia_source AS gaia
@@ -274,7 +273,7 @@ class GaiaData:
     ##########################################################################
     # Python internal
     #
-    def __getattr__(self, name: Any) -> Union[npt.NDArray, u.Quantity]:
+    def __getattr__(self, name: Any) -> npt.NDArray | u.Quantity:
         # to prevent recursion errors:
         # nedbatchelder.com/blog/201010/surprising_getattr_recursion.html
         if name in ["data", "units"]:
@@ -282,7 +281,8 @@ class GaiaData:
 
         lookup_name = name
         if name.startswith("radial_velocity"):
-            # HACK: this should be more general...
+            # HACK: EDR3 calls this "dr2_radial_velocity"
+            # TODO: replace with idea of setting RV and distance column names above
             if (
                 "radial_velocity" not in self.data.colnames
                 and "dr2_radial_velocity" in self.data.colnames
@@ -299,8 +299,7 @@ class GaiaData:
         if name in self.units:
             return arr * self.units[name]
 
-        else:
-            return arr
+        return arr
 
     def __setattr__(self, name: Any, val: Any) -> None:
         if name in ["data", "units"]:
@@ -309,10 +308,11 @@ class GaiaData:
 
         elif name in self.units:
             if not hasattr(val, "unit"):
-                raise ValueError(
-                    f'To set data for column "{name}", you must '
-                    "provide a Quantity-like object (with units)."
+                msg = (
+                    f"To set data for column '{name}', you must provide a Quantity-like"
+                    " object (with units)."
                 )
+                raise ValueError(msg)
             self.data[name] = val
             self.units[name] = val.unit
 
@@ -325,7 +325,7 @@ class GaiaData:
     def __dir__(self):
         return super().__dir__() + [str(k) for k in self.data.columns]
 
-    def __getitem__(self, slc: Union[int, slice, npt.NDArray]) -> GaiaData:
+    def __getitem__(self, slc: int | slice | npt.NDArray) -> GaiaData:
         if isinstance(slc, int):
             slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
@@ -355,7 +355,7 @@ class GaiaData:
     # Computed and convenience quantities
     #
     def get_pm(
-        self, frame: Optional[Union[str, coord.BaseCoordinateFrame]] = "icrs"
+        self, frame: str | coord.BaseCoordinateFrame = "icrs"
     ) -> u.Quantity[u.mas / u.yr]:
         """Get the 2D proper motion array in the specified frame
 
@@ -381,9 +381,9 @@ class GaiaData:
     @u.quantity_input(min_parallax=u.mas, equivalencies=u.parallax())
     def get_distance(
         self,
-        min_parallax: Optional[u.Quantity[angle]] = None,
-        parallax_fill_value: Optional[float] = np.nan,
-        allow_negative: Optional[bool] = False,
+        min_parallax: u.Quantity[angle] | None = None,
+        parallax_fill_value: float = np.nan,
+        allow_negative: bool = False,
     ) -> u.Quantity[u.kpc]:
         """Compute distance from parallax (by inverting the parallax) using
         `~astropy.coordinates.Distance`.
@@ -429,7 +429,7 @@ class GaiaData:
         return self.distance.distmod
 
     def get_radial_velocity(
-        self, fill_value: Optional[float] = None
+        self, fill_value: float | None = None
     ) -> u.Quantity[u.km / u.s]:
         """Return radial velocity but with invalid values filled with the
         specified fill value.
@@ -456,8 +456,8 @@ class GaiaData:
 
     def get_cov(
         self,
-        RAM_threshold: Optional[u.Quantity] = 1 * u.gigabyte,
-        units: Optional[dict] = None,
+        RAM_threshold: u.Quantity = 1 * u.gigabyte,
+        units: dict | None = None,
     ) -> tuple[npt.NDArray, dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need
@@ -481,22 +481,19 @@ class GaiaData:
             threshold. Set to ``None`` to disable this checking.
         """
 
-        if "cov" in self._cache:
-            if units == self._cache["cov_units"]:
-                return self._cache["cov"]
-
         if RAM_threshold is not None:
             # Raise error if the user is going to blow up their RAM
             estimated_RAM = 6 * 6 * len(self) * 8 * u.bit
             if estimated_RAM > RAM_threshold:
-                raise RuntimeError(
+                msg = (
                     "Estimated RAM usage for generating covariance matrices is larger "
                     "than the specified threshold. Use the argument: "
                     "`RAM_threshold=None` to disable this check"
                 )
+                raise RuntimeError(msg)
 
         if units is None:
-            units = dict()
+            units = {}
         units.setdefault("ra", u.deg)
         units.setdefault("dec", u.deg)
         units.setdefault("parallax", u.mas)
@@ -543,10 +540,7 @@ class GaiaData:
                 C[:, i, j] = corr * np.sqrt(C[:, i, i] * C[:, j, j])
                 C[:, j, i] = C[:, i, j]
 
-        self._cache["cov"] = C
-        self._cache["cov_units"] = units
-
-        return self._cache["cov"], units
+        return C, units
 
     def get_ebv(self, dustmaps_cls=None) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
@@ -635,12 +629,12 @@ class GaiaData:
         """Compute and return the renormalized unit-weight error."""
         if "ruwe" in self.data.colnames:
             return self.ruwe
-        else:
-            interp = U0Interpolator()
 
-            bprp = self.phot_bp_mean_mag.value - self.phot_rp_mean_mag.value
-            u0 = interp.get_u0(self.phot_g_mean_mag.value, bprp)
-            return self.get_uwe() / u0
+        interp = U0Interpolator()
+
+        bprp = self.phot_bp_mean_mag.value - self.phot_rp_mean_mag.value
+        u0 = interp.get_u0(self.phot_g_mean_mag.value, bprp)
+        return self.get_uwe() / u0
 
     ##########################################################################
     # Astropy connections
@@ -700,7 +694,7 @@ class GaiaData:
             if _check:
                 return self._cache["coord"]
 
-        kw = dict()
+        kw = {}
         if self._has_rv:
             kw["radial_velocity"] = self.radial_velocity
 
@@ -807,7 +801,8 @@ class GaiaData:
         mask = np.ones(len(self), dtype=bool)
         for k, (x1, x2) in kwargs.items():
             if x1 is None and x2 is None:
-                raise ValueError(f"Both range values are None for key {k}!")
+                msg = f"Both range values are None for key {k}!"
+                raise ValueError(msg)
 
             if x1 is None:
                 mask &= self[k] < x2

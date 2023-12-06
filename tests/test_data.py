@@ -85,6 +85,9 @@ def test_str_repr(filename):
 def test_computed_quantities(filename):
     gd = GaiaData(filename)
 
+    pm = gd.get_pm()
+    assert pm.shape == (len(gd), 2)
+
     assert isinstance(gd.distance, coord.Distance)
     assert gd.distance.shape == (len(gd),)
 
