@@ -756,12 +756,15 @@ class GaiaData:
             samples from the error distribution.
 
         """
+        # TODO: add option to only sample in some columns - need to add names as option
+        # here and in get_cov()
         if rng is None:
             rng = np.random.default_rng()
         elif isinstance(rng, int):
             rng = np.random.default_rng(rng)
 
-        C, C_units = self.get_cov().copy()
+        C, C_units = self.get_cov()
+        C = C.copy()
         rv_mask = ~np.isfinite(C[:, 5, 5])
         C[rv_mask, 5, 5] = 0.0
 

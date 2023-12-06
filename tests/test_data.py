@@ -127,12 +127,12 @@ def test_skycoord(filename):
 
 @pytest.mark.parametrize("filename", dr_filenames)
 def test_setattr(filename):
-    tbl = filename
+    tbl = Table.read(filename, unit_parse_strict="silent")
     tbl["arr_column"] = np.arange(len(tbl)) * 10.0
     gd = GaiaData(tbl)
 
     # Setting a quantity column
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Quantity-like object"):
         gd.parallax = np.arange(len(gd))
 
     new_vals = np.arange(len(gd)) * u.microarcsecond
