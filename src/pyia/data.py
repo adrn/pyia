@@ -1,10 +1,8 @@
 """ Data structures. """
 
 # Standard library
-from __future__ import annotations
-
 import pathlib
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Third-party
 import astropy.coordinates as coord
@@ -104,7 +102,7 @@ class GaiaData:
     """
 
     def __init__(
-        self, data: Table | str | pathlib.Path | dict[str, Any], **kwargs: Any
+        self, data: Union[Table, str, pathlib.Path, Dict[str, Any]], **kwargs: Any
     ) -> None:
         if not isinstance(data, Table):
             if isinstance(data, (str, pathlib.Path)):
@@ -149,15 +147,15 @@ class GaiaData:
         )
 
         # For caching later
-        self._cache: dict[Any, Any] = {}
+        self._cache: Dict[Any, Any] = {}
 
     @classmethod
     def from_query(
         cls,
         query_str: str,
-        login_info: dict[str, str] | None = None,
+        login_info: Optional[Dict[str, str]] = None,
         verbose: bool = False,
-    ) -> GaiaData:
+    ) -> "GaiaData":
         """
         Run the specified query and return a `GaiaData` instance with the
         returned data.
@@ -205,10 +203,10 @@ class GaiaData:
     def from_source_id(
         cls,
         source_id: int,
-        source_id_dr: str | None = None,
-        data_dr: str | None = None,
+        source_id_dr: Optional[str] = None,
+        data_dr: Optional[str] = None,
         **kwargs: Any,
-    ) -> GaiaData:
+    ) -> "GaiaData":
         """Retrieve data from a DR for a given Gaia source_id in a DR.
 
         Useful if you have, e.g., a DR2 source_id and want EDR3 data.
@@ -272,7 +270,7 @@ class GaiaData:
     ##########################################################################
     # Python internal
     #
-    def __getattr__(self, name: Any) -> npt.NDArray | u.Quantity:
+    def __getattr__(self, name: Any) -> Union[npt.NDArray, u.Quantity]:
         # to prevent recursion errors:
         # nedbatchelder.com/blog/201010/surprising_getattr_recursion.html
         if name in ["data", "units"]:
@@ -321,10 +319,12 @@ class GaiaData:
         else:
             super().__setattr__(name, val)
 
-    def __dir__(self) -> list[str]:
+    def __dir__(self) -> List[str]:
         return list(super().__dir__()) + [str(k) for k in self.data.columns]
 
-    def __getitem__(self, slc: int | slice | npt.NDArray) -> GaiaData | Any:
+    def __getitem__(
+        self, slc: Union[int, slice, npt.NDArray]
+    ) -> Union["GaiaData", Any]:
         if isinstance(slc, int):
             slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
@@ -354,7 +354,7 @@ class GaiaData:
     # Computed and convenience quantities
     #
     def get_pm(
-        self, frame: str | coord.BaseCoordinateFrame = "icrs"
+        self, frame: Union[str, coord.BaseCoordinateFrame] = "icrs"
     ) -> u.Quantity[u.mas / u.yr]:
         """Get the 2D proper motion array in the specified frame
 
@@ -377,11 +377,10 @@ class GaiaData:
             )
         return pm
 
-    # TODO: re-enable this when Astropy adds support for __future__ annotations
-    # @u.quantity_input(equivalencies=u.parallax())
+    @u.quantity_input  # (equivalencies=u.parallax())
     def get_distance(
         self,
-        min_parallax: u.Quantity[angle] | None = None,
+        min_parallax: Optional[u.Quantity[angle]] = None,
         parallax_fill_value: float = np.nan,
         allow_negative: bool = False,
     ) -> u.Quantity[u.kpc]:
@@ -429,7 +428,7 @@ class GaiaData:
         return self.distance.distmod
 
     def get_radial_velocity(
-        self, fill_value: float | None = None
+        self, fill_value: Optional[float] = None
     ) -> u.Quantity[u.km / u.s]:
         """Return radial velocity but with invalid values filled with the
         specified fill value.
@@ -457,8 +456,8 @@ class GaiaData:
     def get_cov(
         self,
         RAM_threshold: u.Quantity = 1 * u.gigabyte,
-        units: dict[str, u.Unit] | None = None,
-    ) -> tuple[npt.NDArray, dict[str, u.Unit]]:
+        units: Optional[Dict[str, u.Unit]] = None,
+    ) -> Tuple[npt.NDArray, Dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need
         covariance matrices. This converts the data provided by Gaia into covariance
@@ -542,7 +541,7 @@ class GaiaData:
 
         return C, units
 
-    def get_ebv(self, dustmaps_cls: Any | None = None) -> npt.NDArray:
+    def get_ebv(self, dustmaps_cls: Optional[Any] = None) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -562,7 +561,7 @@ class GaiaData:
         return dustmaps_cls().query(c)
 
     def get_ext(
-        self, ebv: npt.ArrayLike | None = None, dustmaps_cls: Any | None = None
+        self, ebv: Optional[npt.ArrayLike] = None, dustmaps_cls: Optional[Any] = None
     ) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
 
@@ -649,8 +648,8 @@ class GaiaData:
 
     def get_skycoord(
         self,
-        distance: u.Quantity[length] | None = None,
-        radial_velocity: u.Quantity[vel] | None = None,
+        distance: Optional[u.Quantity[length]] = None,
+        radial_velocity: Optional[u.Quantity[vel]] = None,
         ref_epoch: str = REF_EPOCH[LATEST_RELEASE],
     ) -> coord.SkyCoord:
         """
@@ -730,8 +729,8 @@ class GaiaData:
     def get_error_samples(
         self,
         size: int = 1,
-        rng: int | np.random.Generator | None = None,
-    ) -> GaiaData:
+        rng: Union[int, np.random.Generator, None] = None,
+    ) -> "GaiaData":
         """Generate a sampling from the Gaia error distribution for each source.
 
         This function constructs the astrometric covariance matrix for each source and
@@ -780,7 +779,7 @@ class GaiaData:
 
         return self.__class__(d)
 
-    def filter(self, **kwargs: Any) -> GaiaData:
+    def filter(self, **kwargs: Any) -> "GaiaData":
         """
         Filter the data based on columns and data ranges.
 

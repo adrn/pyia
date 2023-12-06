@@ -1,8 +1,8 @@
 # ruff: noqa
 
-# Third-party
-from __future__ import annotations
+from typing import Tuple
 
+# Third-party
 import numpy as np
 import numpy.typing as npt
 
@@ -16,7 +16,7 @@ def get_ext_dr2_Babusiaux(
     rp: npt.ArrayLike,
     ebv: npt.ArrayLike,
     maxnit: int = 8,
-) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """Compute the Gaia extinctions assuming relations from Babusieux+2018
     Arguments: G, bp, rp, E(B-V)
     maxnit -- number of iterations
