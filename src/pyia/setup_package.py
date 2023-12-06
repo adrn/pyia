@@ -1,5 +1,5 @@
-from __future__ import annotations
+from typing import Dict, List
 
 
-def get_package_data() -> dict[str, list[str]]:
+def get_package_data() -> Dict[str, List[str]]:
     return {"pyia": ["data/*"]}
