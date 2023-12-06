@@ -1,7 +1,8 @@
-# coding: utf-8
 """ Data structures. """
 
 # Standard library
+from __future__ import annotations
+
 import pathlib
 from typing import Any, Optional, Union
 
@@ -85,6 +86,10 @@ REF_EPOCH = {
 }
 LATEST_RELEASE = "DR3"
 
+# Mapping from key = dtype chars to value = fill value
+# https://numpy.org/doc/stable/reference/arrays.dtypes.html
+_fill_values = {"i": -1, "u": 0, "f": np.nan, "d": np.nan, "U": "", "S": ""}
+
 
 class GaiaData:
     """Class for loading and interacting with data from the Gaia mission. This
@@ -132,7 +137,7 @@ class GaiaData:
         self.data = data
 
         # Update the unit map with the table units
-        self._invalid_units = dict()
+        self._invalid_units = {}
         for c in data.colnames:
             if data[c].unit is not None:
                 try:
@@ -155,7 +160,7 @@ class GaiaData:
         query_str: str,
         login_info: Optional[dict] = None,
         verbose: Optional[bool] = False,
-    ) -> "GaiaData":
+    ) -> GaiaData:
         """
         Run the specified query and return a `GaiaData` instance with the
         returned data.
@@ -206,7 +211,7 @@ class GaiaData:
         source_id_dr: Optional[str] = None,
         data_dr: Optional[str] = None,
         **kwargs: Any,
-    ) -> "GaiaData":
+    ) -> GaiaData:
         """Retrieve data from a DR for a given Gaia source_id in a DR.
 
         Useful if you have, e.g., a DR2 source_id and want EDR3 data.
@@ -288,7 +293,7 @@ class GaiaData:
 
         coldata = self.data[lookup_name]
         if hasattr(coldata, "mask") and coldata.mask is not None:
-            arr = coldata.filled(self._fill_values.get(coldata.dtype.char, None))
+            arr = coldata.filled(_fill_values.get(coldata.dtype.char, None))
         else:
             arr = coldata
         arr = np.asarray(arr)
@@ -307,8 +312,8 @@ class GaiaData:
         elif name in self.units:
             if not hasattr(val, "unit"):
                 raise ValueError(
-                    'To set data for column "{0}", you must '
-                    "provide a Quantity-like object (with units).".format(name)
+                    f'To set data for column "{name}", you must '
+                    "provide a Quantity-like object (with units)."
                 )
             self.data[name] = val
             self.units[name] = val.unit
@@ -322,7 +327,7 @@ class GaiaData:
     def __dir__(self):
         return super().__dir__() + [str(k) for k in self.data.columns]
 
-    def __getitem__(self, slc: Union[int, slice, npt.NDArray]) -> "GaiaData":
+    def __getitem__(self, slc: Union[int, slice, npt.NDArray]) -> GaiaData:
         if isinstance(slc, int):
             slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
@@ -530,8 +535,8 @@ class GaiaData:
                 if j <= i:
                     continue
 
-                if "{0}_{1}_corr".format(name1, name2) in self.data.colnames:
-                    corr = getattr(self, "{0}_{1}_corr".format(name1, name2))
+                if f"{name1}_{name2}_corr" in self.data.colnames:
+                    corr = getattr(self, f"{name1}_{name2}_corr")
                 else:
                     corr = np.nan
 
@@ -654,9 +659,9 @@ class GaiaData:
 
     def get_skycoord(
         self,
-        distance: Optional[u.Quantity[length]] = None,
-        radial_velocity: Optional[u.Quantity[vel]] = None,
-        ref_epoch: Optional[str] = REF_EPOCH[LATEST_RELEASE],
+        distance: u.Quantity[length] | None = None,
+        radial_velocity: u.Quantity[vel] | None = None,
+        ref_epoch: str = REF_EPOCH[LATEST_RELEASE],
     ) -> coord.SkyCoord:
         """
         Return an `~astropy.coordinates.SkyCoord` object to represent
@@ -734,9 +739,9 @@ class GaiaData:
 
     def get_error_samples(
         self,
-        size: Optional[int] = 1,
-        rng: Optional[Union[int, np.random.Generator]] = None,
-    ) -> "GaiaData":
+        size: int = 1,
+        rng: int | np.random.Generator | None = None,
+    ) -> GaiaData:
         """Generate a sampling from the Gaia error distribution for each source.
 
         This function constructs the astrometric covariance matrix for each source and
@@ -783,7 +788,7 @@ class GaiaData:
 
         return self.__class__(d)
 
-    def filter(self, **kwargs) -> "GaiaData":
+    def filter(self, **kwargs) -> GaiaData:
         """
         Filter the data based on columns and data ranges.
 
