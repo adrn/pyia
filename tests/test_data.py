@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pathlib
+import warnings
 
 import astropy.coordinates as coord
 import astropy.units as u
@@ -78,7 +79,7 @@ def test_slicing_getattr(filename):
 def test_str_repr(filename):
     gd = GaiaData(filename)
     assert "GaiaData" in repr(gd)
-    assert "100 rows" in repr(gd)
+    assert "1000 rows" in repr(gd)
 
 
 @pytest.mark.parametrize("filename", dr_filenames)
@@ -88,13 +89,15 @@ def test_computed_quantities(filename):
     pm = gd.get_pm()
     assert pm.shape == (len(gd), 2)
 
-    assert isinstance(gd.distance, coord.Distance)
-    assert gd.distance.shape == (len(gd),)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        assert isinstance(gd.distance, coord.Distance)
+        assert gd.distance.shape == (len(gd),)
 
-    assert gd.distmod.unit == u.mag
+        assert gd.distmod.unit == u.mag
 
-    assert gd.vtan.unit == u.km / u.s
-    assert gd.vtan.shape == (len(gd), 2)
+        assert gd.vtan.unit == u.km / u.s
+        assert gd.vtan.shape == (len(gd), 2)
 
 
 @pytest.mark.parametrize("filename", dr_filenames)
@@ -113,16 +116,26 @@ def test_skycoord(filename):
     gd = GaiaData(filename)
     gd = gd[np.isfinite(gd.radial_velocity)]
 
-    c = gd.skycoord
-    assert len(c) == len(gd)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        c = gd.skycoord
+        assert len(c) == len(gd)
 
-    c = gd.get_skycoord(radial_velocity="radial_velocity")
-    assert np.all(c.radial_velocity == gd.radial_velocity)
+        c = gd.get_skycoord(radial_velocity="radial_velocity")
+        assert np.allclose(
+            gd.radial_velocity, c.radial_velocity, equal_nan=True, atol=1e-12, rtol=0
+        )
 
-    gd["dist"] = coord.Distance(parallax=gd.parallax).kpc * u.kpc
-    c = gd.get_skycoord(radial_velocity="radial_velocity", distance="dist")
-    assert np.all(c.radial_velocity == gd.radial_velocity)
-    assert np.all(c.distance == gd.distance)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        gd["dist"] = (
+            coord.Distance(parallax=gd.parallax, allow_negative=True).kpc * u.kpc
+        )
+        c = gd.get_skycoord(radial_velocity="radial_velocity", distance="dist")
+        assert np.allclose(
+            gd.radial_velocity, c.radial_velocity, equal_nan=True, atol=1e-12, rtol=0
+        )
+        assert np.allclose(gd.distance, c.distance, equal_nan=True, atol=1e-12, rtol=0)
 
 
 @pytest.mark.parametrize("filename", dr_filenames)
@@ -181,7 +194,7 @@ def test_get_samples(filename):
     assert g_samples.radial_velocity.shape == (len(gd), 16)
 
     c = g_samples.get_skycoord(distance=False)
-    assert c.shape == (100, 16)
+    assert c.shape == (1000, 16)
 
 
 def test_compute_ruwe():
