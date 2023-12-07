@@ -102,7 +102,15 @@ class GaiaData:
     """
 
     def __init__(
-        self, data: Union[Table, str, pathlib.Path, Dict[str, Any]], **kwargs: Any
+        self,
+        data: Union[Table, str, pathlib.Path, Dict[str, Any]],
+        distance_colname: str = "parallax",
+        distance_error_colname: str = "parallax_error",
+        distance_unit: Union[u.Unit, str, None] = None,
+        radial_velocity_colname: str = "radial_velocity",
+        radial_velocity_error_colname: str = "radial_velocity_error",
+        radial_velocity_unit: Union[u.Unit, str, None] = None,
+        **kwargs: Any,
     ) -> None:
         if not isinstance(data, Table):
             if isinstance(data, (str, pathlib.Path)):
@@ -140,11 +148,43 @@ class GaiaData:
                 except ValueError:
                     self._invalid_units[c] = data[c].unit
 
-        # HACK: hard coded
-        self._has_rv = (
-            "radial_velocity" in self.data.colnames
-            or "dr2_radial_velocity" in self.data.colnames
-        )
+        self.radial_velocity_colname = str(radial_velocity_colname)
+        self.radial_velocity_error_colname = str(radial_velocity_error_colname)
+        self.distance_colname = str(distance_colname)
+        self.distance_error_colname = str(distance_error_colname)
+
+        for colname, default, unit in zip(
+            [
+                self.radial_velocity_colname,
+                self.radial_velocity_error_colname,
+                self.distance_colname,
+                self.distance_error_colname,
+            ],
+            ["radial_velocity", "radial_velocity_error", "parallax", "parallax_error"],
+            [radial_velocity_unit, radial_velocity_unit, distance_unit, distance_unit],
+        ):
+            if colname not in self.data.colnames:
+                msg = f"Column '{colname}' not found in data table."
+                raise ValueError(msg)
+
+            if colname != default:
+                col = self.data[colname]
+                if not hasattr(col, "unit") or col.unit == u.one or col.unit is None:
+                    if unit is None:
+                        msg = (
+                            "If you use a custom column for radial velocity or "
+                            "distance, and/or their respective errors, that column "
+                            "must have an associated astropy unit, or you must specify "
+                            f"the corresponding ..._unit keyword argument. {colname} "
+                            "does not have a unit."
+                        )
+                        raise ValueError(msg)
+                    self.units[colname] = unit
+
+                elif unit is not None:
+                    self.data[colname] = u.Quantity(col).to_value(unit)
+
+        self._has_rv = self.radial_velocity_colname in self.data.colnames
 
         # For caching later
         self._cache: Dict[Any, Any] = {}
@@ -377,7 +417,7 @@ class GaiaData:
         min_parallax: Optional[u.Quantity[angle]] = None,
         parallax_fill_value: float = np.nan,
         allow_negative: bool = False,
-    ) -> u.Quantity[u.kpc]:
+    ) -> u.Quantity:
         """Compute distance from parallax (by inverting the parallax) using
         `~astropy.coordinates.Distance`.
 
@@ -395,6 +435,11 @@ class GaiaData:
             A ``Distance`` object with the data.
         """
 
+        if self.distance_colname != "parallax":
+            return coord.Distance(
+                getattr(self, self.distance_colname), allow_negative=allow_negative
+            )
+
         plx = self.parallax.copy()
 
         if np.isnan(parallax_fill_value):
@@ -408,7 +453,7 @@ class GaiaData:
         return coord.Distance(parallax=plx, allow_negative=allow_negative)
 
     @property
-    def distance(self) -> u.Quantity[u.kpc]:
+    def distance(self) -> u.Quantity:
         """Assumes 1/parallax. Has shape `(nrows,)`.
 
         This attribute will raise an error when there are negative or zero
@@ -432,8 +477,14 @@ class GaiaData:
         fill_value : `~astropy.units.Quantity` (optional)
             If not ``None``, fill any invalid values with the specified value.
         """
-        rv = self.radial_velocity.copy()
-        rv[~np.isfinite(rv)] = fill_value
+        if self.radial_velocity_colname != "radial_velocity":
+            rv = getattr(self, self.radial_velocity_colname)
+        else:
+            rv = self.radial_velocity.copy()
+
+        if fill_value is not None:
+            rv[~np.isfinite(rv)] = fill_value * rv.unit
+
         return rv
 
     @property
@@ -687,7 +738,7 @@ class GaiaData:
 
         kw = {}
         if self._has_rv:
-            kw["radial_velocity"] = self.radial_velocity
+            kw["radial_velocity"] = self.get_radial_velocity()
 
         # Reference epoch
         if "ref_epoch" in self.data.colnames:
@@ -706,7 +757,7 @@ class GaiaData:
             kw.pop("radial_velocity")
 
         if distance is None:
-            kw["distance"] = self.distance
+            kw["distance"] = self.get_distance(allow_negative=True)
         elif distance is not False and distance is not None:
             if isinstance(distance, str):
                 kw["distance"] = self[distance]
