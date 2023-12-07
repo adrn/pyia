@@ -215,3 +215,76 @@ def test_filter(filename):
     assert new_g.parallax.min() > 0.5 * u.mas
     assert new_g.parallax.max() < 5 * u.mas
     assert new_g.phot_g_mean_mag.max() < 17.5 * u.mag
+
+
+class TestCustomRVDist:
+    def setup_class(self):
+        # First, make some renamed columns:
+        filename = get_pkg_data_filename("data/gdr3_sm.fits")
+        tbl = Table.read(filename, unit_parse_strict="silent")
+        tbl = tbl[~tbl["radial_velocity"].mask & (tbl["parallax"] > 0)]
+
+        tbl["VHELIO"] = tbl["radial_velocity"]
+        tbl["VERR"] = tbl["radial_velocity_error"]
+
+        rng = np.random.default_rng(seed=42)
+        plx_samples = rng.normal(
+            tbl["parallax"], tbl["parallax_error"], size=(128, len(tbl))
+        ).T
+        dd = 1 / plx_samples
+        tbl["dist50"] = np.nanmedian(dd, axis=1) * u.kpc
+        tbl["dist_err"] = (
+            np.diff(np.nanpercentile(dd, [16, 84], axis=1), axis=0)[0] / 2 * u.kpc
+        )
+        tbl.remove_columns(
+            ["parallax", "parallax_error", "radial_velocity", "radial_velocity_error"]
+        )
+        self.tbl = tbl
+
+        self.kw = {
+            "radial_velocity_colname": "VHELIO",
+            "radial_velocity_error_colname": "VERR",
+            "distance_colname": "dist50",
+            "distance_error_colname": "dist_err",
+        }
+
+    def test_success_init(self):
+        g = GaiaData(self.tbl, **self.kw)
+
+        d = g.distance
+        assert np.all(d.value == self.tbl["dist50"])
+
+        rv = g.get_radial_velocity()
+        assert np.all(rv.value == self.tbl["VHELIO"])
+
+        # Pass unit in explicitly:
+        tbl = self.tbl.copy()
+        tbl["VHELIO"].unit = None
+        tbl["dist50"].unit = None
+        g = GaiaData(tbl, **self.kw, radial_velocity_unit=u.m / u.s, distance_unit=u.pc)
+        assert g.get_radial_velocity().unit == u.m / u.s
+        assert g.get_distance().unit == u.pc
+
+    def test_fail_init(self):
+        # Colname that is missing:
+        for k in self.kw:
+            kk = self.kw.copy()
+            kk[k] = "not_a_column"
+            with pytest.raises(ValueError, match="not found in data table"):
+                GaiaData(self.tbl, **kk)
+
+        # No associated unit:
+        for v in self.kw.values():
+            tbl = self.tbl.copy()
+            tbl[v].unit = None
+            with pytest.raises(ValueError, match="does not have a unit"):
+                GaiaData(tbl, **self.kw)
+
+    def test_skycoord(self):
+        g = GaiaData(self.tbl, **self.kw)
+        c = g.get_skycoord()
+        assert u.allclose(c.radial_velocity, g.VHELIO)
+        assert u.allclose(c.distance, g.dist50)
+
+        c = g.get_skycoord(radial_velocity=g.VHELIO * 2)
+        assert not u.allclose(c.radial_velocity, g.VHELIO)
