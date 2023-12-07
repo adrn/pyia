@@ -2,6 +2,7 @@
 
 # Standard library
 import pathlib
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Third-party
@@ -183,6 +184,7 @@ class GaiaData:
 
                 elif unit is not None:
                     self.data[colname] = u.Quantity(col).to_value(unit)
+                    self.units[colname] = unit
 
         self._has_rv = self.radial_velocity_colname in self.data.colnames
 
@@ -501,7 +503,9 @@ class GaiaData:
     def get_cov(
         self,
         RAM_threshold: u.Quantity = 1 * u.gigabyte,
+        coords: Optional[List[str]] = None,
         units: Optional[Dict[str, u.Unit]] = None,
+        warn_missing_corr: bool = True,
     ) -> Tuple[npt.NDArray, Dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need
@@ -536,48 +540,54 @@ class GaiaData:
                 )
                 raise RuntimeError(msg)
 
+        if coords is None:
+            coords = [
+                "ra",
+                "dec",
+                self.distance_colname,
+                "pmra",
+                "pmdec",
+                self.radial_velocity_colname,
+            ]
+
         if units is None:
             units = {}
-        units.setdefault("ra", u.deg)
-        units.setdefault("dec", u.deg)
-        units.setdefault("parallax", u.mas)
-        units.setdefault("pmra", u.mas / u.yr)
-        units.setdefault("pmdec", u.mas / u.yr)
-        units.setdefault("radial_velocity", u.km / u.s)
+
+        for name in coords:
+            units.setdefault(name, self.units[name])
 
         # The full returned matrix
-        C = np.zeros((len(self), 6, 6))
-
-        # We handle radial_velocity separately below - doesn't have correlation
-        # coefficients with the astrometric parameters
-        names = ["ra", "dec", "parallax", "pmra", "pmdec"]
+        C = np.zeros((len(self), len(coords), len(coords)))
 
         # pre-load the diagonal
-        for i, name in enumerate(names):
-            if name + "_error" in self.data.colnames:
+        for i, name in enumerate(coords):
+            if name == self.distance_colname:
+                err = getattr(self, self.distance_error_colname)
+            elif name == self.radial_velocity_colname:
+                err = getattr(self, self.radial_velocity_error_colname)
+            elif name + "_error" in self.data.colnames:
                 err = getattr(self, name + "_error")
-                C[:, i, i] = err.to(units[name]).value ** 2
             else:
-                C[:, i, i] = np.nan
+                err = 0.0 * units[name]
+            C[:, i, i] = err.to_value(units[name]) ** 2
 
-        if self._has_rv:
-            name = "radial_velocity"
-            err = getattr(self, name + "_error")
-            C[:, 5, 5] = err.to(units[name]).value ** 2
-        else:
-            C[:, 5, 5] = np.inf
-
-        C[:, 5, 5][np.isnan(C[:, 5, 5])] = np.inf  # missing values
-
-        for i, name1 in enumerate(names):
-            for j, name2 in enumerate(names):
+        for i, name1 in enumerate(coords):
+            for j, name2 in enumerate(coords):
                 if j <= i:
                     continue
 
                 if f"{name1}_{name2}_corr" in self.data.colnames:
                     corr = getattr(self, f"{name1}_{name2}_corr")
                 else:
-                    corr = np.nan
+                    corr = 0.0
+
+                    if warn_missing_corr:
+                        warnings.warn(
+                            f"Missing correlation coefficient for {name1} and {name2}. "
+                            "Setting to zero.",
+                            RuntimeWarning,
+                            stacklevel=1,
+                        )
 
                 # We don't need to worry about units here because the diagonal
                 # values have already been converted
