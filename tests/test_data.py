@@ -222,6 +222,8 @@ class TestCustomRVDist:
         # First, make some renamed columns:
         filename = get_pkg_data_filename("data/gdr3_sm.fits")
         tbl = Table.read(filename, unit_parse_strict="silent")
+        self.orig_tbl = tbl.copy()
+
         tbl = tbl[~tbl["radial_velocity"].mask & (tbl["parallax"] > 0)]
 
         tbl["VHELIO"] = tbl["radial_velocity"]
@@ -308,3 +310,17 @@ class TestCustomRVDist:
         # Subset of coordinates
         C, units = g.get_cov(coords=["ra", "dec", "dist50"], warn_missing_corr=False)
         assert C.shape == (len(g), 3, 3)
+
+    def test_error_samples(self):
+        g = GaiaData(self.tbl, **self.kw)
+        s = g.get_error_samples(size=16, warn_missing_corr=False)
+        assert s.ra.shape == (len(g), 16)
+        assert s.dec.shape == (len(g), 16)
+        assert s.VHELIO.shape == (len(g), 16)
+        assert s.dist50.shape == (len(g), 16)
+
+        g = GaiaData(self.orig_tbl)
+        s = g.get_error_samples(size=16, coords=["ra", "dec", "parallax"])
+        assert s.ra.shape == (len(g), 16)
+        assert s.parallax.shape == (len(g), 16)
+        assert s.pmra.shape == (len(g),)

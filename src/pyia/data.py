@@ -153,6 +153,14 @@ class GaiaData:
         self.radial_velocity_error_colname = str(radial_velocity_error_colname)
         self.distance_colname = str(distance_colname)
         self.distance_error_colname = str(distance_error_colname)
+        self._extra_kw: Dict[str, Union[str, u.Unit]] = {
+            "distance_colname": self.distance_colname,
+            "distance_error_colname": self.distance_error_colname,
+            "distance_unit": distance_unit,
+            "radial_velocity_colname": self.radial_velocity_colname,
+            "radial_velocity_error_colname": self.radial_velocity_error_colname,
+            "radial_velocity_unit": radial_velocity_unit,
+        }
 
         for colname, default, unit in zip(
             [
@@ -365,7 +373,7 @@ class GaiaData:
             slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
             return self.__getattr__(slc)
-        return self.__class__(self.data[slc])
+        return self.__class__(self.data[slc], **self._extra_kw)
 
     def __setitem__(self, name: Any, val: Any) -> None:
         if hasattr(val, "unit"):
@@ -785,6 +793,7 @@ class GaiaData:
         self,
         size: int = 1,
         rng: Union[int, np.random.Generator, None] = None,
+        **get_cov_kwargs: Any,
     ) -> "GaiaData":
         """Generate a sampling from the Gaia error distribution for each source.
 
@@ -814,25 +823,28 @@ class GaiaData:
             rng = np.random.default_rng()
         rng = np.random.default_rng(rng)
 
-        C, C_units = self.get_cov()
-        C = C.copy()
-        rv_mask = ~np.isfinite(C[:, 5, 5])
-        C[rv_mask, 5, 5] = 0.0
+        C, C_units = self.get_cov(**get_cov_kwargs)
+        K = C.shape[1]
+
+        # Turn missing values into 0 - but if diagonal is missing, keep note:
+        nan_diag = np.where(np.isnan(C[:, np.arange(K), np.arange(K)]))
+        C[np.isnan(C)] = 0.0
 
         arrs = []
         for k, unit in C_units.items():
             arrs.append(getattr(self, k).to_value(unit))
         y = np.stack(arrs).T
 
-        samples = np.array(
+        y_samples = np.array(
             [rng.multivariate_normal(y[i], C[i], size=size) for i in range(len(y))]
         )
+        y_samples[nan_diag[0], :, nan_diag[1]] = np.nan
 
         d = self.data.copy()
         for i, (k, unit) in enumerate(C_units.items()):
-            d[k] = samples[..., i] * unit
+            d[k] = y_samples[..., i] * unit
 
-        return self.__class__(d)
+        return self.__class__(d, **self._extra_kw)
 
     def filter(self, **kwargs: Any) -> "GaiaData":
         """
