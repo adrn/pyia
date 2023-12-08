@@ -513,7 +513,7 @@ class GaiaData:
         RAM_threshold: u.Quantity = 1 * u.gigabyte,
         coords: Optional[List[str]] = None,
         units: Optional[Dict[str, u.Unit]] = None,
-        warn_missing_corr: bool = True,
+        warn_missing_corr: bool = False,
     ) -> Tuple[npt.NDArray, Dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need

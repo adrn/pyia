@@ -293,7 +293,7 @@ class TestCustomRVDist:
 
     def test_cov(self):
         g = GaiaData(self.tbl, **self.kw)
-        C, units = g.get_cov(warn_missing_corr=False)
+        C, units = g.get_cov()
         assert C.shape == (len(g), 6, 6)
         assert np.allclose(C[:, 2, 2], g.dist_err.to_value(g.dist50.unit) ** 2)
         assert units["dist50"] == g.dist50.unit
@@ -305,7 +305,7 @@ class TestCustomRVDist:
 
         # Default behavior warns if missing correlation coefficients
         with pytest.warns(RuntimeWarning, match="Missing correlation"):
-            g.get_cov()
+            g.get_cov(warn_missing_corr=True)
 
         # Subset of coordinates
         C, units = g.get_cov(coords=["ra", "dec", "dist50"], warn_missing_corr=False)
