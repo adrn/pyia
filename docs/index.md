@@ -1,10 +1,8 @@
+TODO: keep this page as rst...
+
 # pyia: a Python package for working with _Gaia_ data
 
-```{include} ../README.md
-:start-after: <!-- SPHINX-START -->
-```
-
-Source code [on GitHub](https://github.com/adrn/pyia>).
+Source code [on GitHub](https://github.com/adrn/pyia).
 
 What `pyia` can do for you:
 
@@ -359,8 +357,19 @@ velocity for these sources:
 Most of these uncertainties are less than 1-2 km/s! These take into account the
 parallax, proper motion, and radial velocity uncertainties provided by Gaia.
 
-## Indices and tables
+<!-- ## Indices and tables
 
 - {ref}`genindex`
 - {ref}`modindex`
-- {ref}`search`
+- {ref}`search` -->
+
+## API
+
+<!-- ```{automodapi} pyia
+:no-inheritance-diagram:
+:skip: test
+``` -->
+
+```{automodule} pyia
+
+```
