@@ -6,39 +6,50 @@ pyia: a Python package for working with *Gaia* data
 
 Source code `on GitHub <https://github.com/adrn/pyia>`_.
 
-What ``pyia`` can do for you:
+What `pyia` can do for you:
 
-* Access to Gaia data columns as `~astropy.units.Quantity` objects,
-  i.e., with units (e.g., ``data.parallax`` will have units 'milliarcsecond')
-* Construct covariance matrices for Gaia data (`pyia.GaiaData.get_cov()`)
+* Access to Gaia data columns as :class:`~astropy.units.Quantity` objects, i.e., with
+  units (e.g., ``data.parallax`` will have associated units
+  :attr:`~astropy.units.milliarcsecond`)
+* Construct covariance matrices for Gaia data (:meth:`pyia.GaiaData.get_cov`)
 * Generate random samples from the Gaia error distribution per source
-  (`pyia.GaiaData.get_error_samples()`)
+  (:meth:`pyia.GaiaData.get_error_samples`)
 * Create `~astropy.coordinates.SkyCoord` objects from Gaia data
-  (`pyia.GaiaData.skycoord`)
-* Execute simple (small) remote queries via the Gaia science archive and
-  automatically fetch the results (`pyia.GaiaData.from_query()`)
+  (:attr:`pyia.GaiaData.skycoord`)
+* Execute simple (small) remote queries via the Gaia science archive and automatically
+  fetch the results (:meth:`pyia.GaiaData.from_query`)
 
 ************
 Installation
 ************
 
-See instructions here:
+Install `pyia` with ``pip``. We recommend installing the latest version from GitHub
+directly with::
 
-.. toctree::
-   :maxdepth: 1
+    pip install git+https://github.com/adrn/pyia
 
-   install
+To install the latest stable version instead, use::
+
+    pip install pyia
+
+
+Dependencies
+============
+
+* numpy
+* astropy >= 5.0
+* pandas
 
 ***************
 Getting started
 ***************
 
-The key class in this package is the `~pyia.GaiaData` class. Creating an
-instance of this class gives you access to the features mentioned above.
-`~pyia.GaiaData` objects can be created either by passing in a string filename,
-by passing in a pre-loaded `~astropy.table.Table` or `~pandas.DataFrame` object,
-or by executing a remote query with `~pyia.GaiaData.from_query()`. Let's now
-execute some imports  we'll need later::
+The key class in this package is the :class:`~pyia.GaiaData` class. Creating an instance
+of this class gives you access to the features mentioned above. :class:`~pyia.GaiaData`
+objects can be created either by passing in a string filename, by passing in a
+pre-loaded :class:`~astropy.table.Table` or :class:`~pandas.DataFrame` object, or by
+executing a remote query with :meth:`~pyia.GaiaData.from_query`. Let's now execute some
+imports  we'll need later::
 
     >>> import astropy.units as u
     >>> import numpy as np
@@ -265,22 +276,22 @@ only nearby sources, and then generate error samples for the sources. We'll then
 transform the samples to Galactocentric coordinates to look at the uncertainty
 distribution for the full-space velocity.
 
-First, let's load the data:
+First, let's load the data::
 
     >>> g_rv = GaiaData(f'{data_path}/gdr2_rv_sm.fits')
 
-All of these sources have measured radial velocities:
+All of these sources have measured radial velocities::
 
     >>> g_rv.radial_velocity[:4] # doctest: +FLOAT_CMP
     <Quantity [  7.89796709,  30.88496542,   3.04709697, -34.91701273] km / s>
 
-Let's now select only nearby (within 500 pc) sources:
+Let's now select only nearby (within 500 pc) sources::
 
     >>> g_rv = g_rv[g_rv.parallax > 2*u.mas]
 
 To generate samples from the error distribution, we use the
 ``.get_error_samples()`` method, and pass in the number of samples to generate
-(here, 256):
+(here, 256)::
 
     >>> import numpy as np
     >>> g_samples = g_rv.get_error_samples(size=256,
@@ -288,7 +299,7 @@ To generate samples from the error distribution, we use the
 
 Let's now get a ``SkyCoord`` object to represent the data for these sources and
 samples, and transform to a Galactocentric coordinate frame using the Astropy
-coordinate transformation machinery:
+coordinate transformation machinery::
 
     >>> c_samples = g_samples.get_skycoord()
     >>> import astropy.coordinates as coord
@@ -296,12 +307,12 @@ coordinate transformation machinery:
     >>> galcen = c_samples.transform_to(coord.Galactocentric)
 
 Let's now look at the uncertainty on the magnitude of the total velocity, ``v``,
-for each of these sources:
+for each of these sources::
 
     >>> v = galcen.velocity.norm()
 
 And finally, let's compute (from the error samples) the uncertainty on the total
-velocity for these sources:
+velocity for these sources::
 
     >>> err_v = np.std(v, axis=1)
     >>> err_v # doctest: +FLOAT_CMP
@@ -320,4 +331,3 @@ API
 
 .. automodapi:: pyia
     :no-inheritance-diagram:
-    :skip: test
