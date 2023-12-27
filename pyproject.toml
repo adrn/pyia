@@ -51,13 +51,12 @@ dev = [
 ]
 docs = [
   "sphinx>=7.0",
-  "myst_parser>=0.13",
   "sphinx_copybutton",
   "sphinx_autodoc_typehints",
-  "furo>=2023.08.17",
   "matplotlib",
   "scipy",
-  "sphinx-automodapi"
+  "sphinx-automodapi",
+  "pydata-sphinx-theme",
 ]
 
 [project.urls]

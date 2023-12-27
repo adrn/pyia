@@ -6,7 +6,6 @@ author = "Adrian Price-Whelan"
 version = release = importlib.metadata.version("pyia")
 
 extensions = [
-    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
@@ -27,11 +26,7 @@ exclude_patterns = [
     ".venv",
 ]
 
-html_theme = "furo"
-
-myst_enable_extensions = [
-    "colon_fence",
-]
+html_theme = "pydata_sphinx_theme"
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
