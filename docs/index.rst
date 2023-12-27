@@ -6,15 +6,15 @@ pyia: a Python package for working with *Gaia* data
 
 Source code `on GitHub <https://github.com/adrn/pyia>`_.
 
-What `pyia` can do for you:
+What :mod:`pyia` can do for you:
 
-* Access to Gaia data columns as :class:`~astropy.units.Quantity` objects, i.e., with
-  units (e.g., ``data.parallax`` will have associated units
+* Access to Gaia data columns as Astropy :class:`~astropy.units.Quantity` objects, i.e.,
+  with units (e.g., ``data.parallax`` will have associated units
   :attr:`~astropy.units.milliarcsecond`)
 * Construct covariance matrices for Gaia data (:meth:`pyia.GaiaData.get_cov`)
 * Generate random samples from the Gaia error distribution per source
   (:meth:`pyia.GaiaData.get_error_samples`)
-* Create `~astropy.coordinates.SkyCoord` objects from Gaia data
+* Create Astropy :class:`~astropy.coordinates.SkyCoord` objects from Gaia data
   (:attr:`pyia.GaiaData.skycoord`)
 * Execute simple (small) remote queries via the Gaia science archive and automatically
   fetch the results (:meth:`pyia.GaiaData.from_query`)
@@ -23,7 +23,7 @@ What `pyia` can do for you:
 Installation
 ************
 
-Install `pyia` with ``pip``. We recommend installing the latest version from GitHub
+Install :mod:`pyia` with ``pip``. We recommend installing the latest version from GitHub
 directly with::
 
     pip install git+https://github.com/adrn/pyia
@@ -33,34 +33,26 @@ To install the latest stable version instead, use::
     pip install pyia
 
 
-Dependencies
-============
-
-* numpy
-* astropy >= 5.0
-* pandas
-
 ***************
 Getting started
 ***************
 
-The key class in this package is the :class:`~pyia.GaiaData` class. Creating an instance
-of this class gives you access to the features mentioned above. :class:`~pyia.GaiaData`
-objects can be created either by passing in a string filename, by passing in a
-pre-loaded :class:`~astropy.table.Table` or :class:`~pandas.DataFrame` object, or by
-executing a remote query with :meth:`~pyia.GaiaData.from_query`. Let's now execute some
-imports  we'll need later::
+The key class in this package is :class:`~pyia.GaiaData`. Creating an instance of this
+class gives you access to the features mentioned above. :class:`~pyia.GaiaData` objects
+can be created either by passing in a string filename, by passing in a pre-loaded
+:class:`~astropy.table.Table` or :class:`~pandas.DataFrame` object, or by executing a
+remote query with :meth:`~pyia.GaiaData.from_query`. Let's now execute some imports
+we will need later::
 
     >>> import astropy.units as u
     >>> import numpy as np
-    >>> from pyia import GaiaData
+    >>> import pyia
 
 This code block can be ignored and is only used to set up paths to data files
 used in the examples below::
 
-    >>> import os, pyia
-    >>> data_path = os.path.join(os.path.split(pyia.__file__)[0],
-    ...                          'tests/data')
+    >>> import pathlib
+    >>> data_path = pathlib.Path(pyia.__file__).parent / 'tests' / 'data'
 
 If you've already downloaded some Gaia data in tabular format and saved it to a
 file on disk, you can create an instance by passing the path to the file. As an
@@ -75,14 +67,14 @@ the following query::
 This data is also provided with ``pyia``, so we'll load the cached version
 here::
 
-    >>> g = GaiaData(f'{data_path}/gdr2_sm.fits')
+    >>> g = GaiaData(data_path / 'gdr2_sm.fits')
     >>> g
     <GaiaData: 100 rows>
 
 As mentioned above, you can also pass in pre-loaded data::
 
     >>> from astropy.table import Table
-    >>> tbl = Table.read(f'{data_path}/gdr2_sm.fits')
+    >>> tbl = Table.read(data_path / 'gdr2_sm.fits')
     >>> GaiaData(tbl)
     <GaiaData: 100 rows>
 
@@ -189,7 +181,7 @@ corresponding distance!). We may want to fill those values with NaN's or just
 filter them out. Let's work now with a small subset of the Gaia data that
 contains some negative parallax measurements::
 
-    >>> g = GaiaData(f'{data_path}/gdr2_sm_negplx.fits')
+    >>> g = GaiaData(data_path / 'gdr2_sm_negplx.fits')
     >>> len(g)
     8
     >>> g[np.isfinite(g.parallax) & (g.parallax > 0)]
@@ -278,7 +270,7 @@ distribution for the full-space velocity.
 
 First, let's load the data::
 
-    >>> g_rv = GaiaData(f'{data_path}/gdr2_rv_sm.fits')
+    >>> g_rv = GaiaData(data_path / 'gdr2_rv_sm.fits')
 
 All of these sources have measured radial velocities::
 
@@ -326,8 +318,9 @@ Most of these uncertainties are less than 1-2 km/s! These take into account the
 parallax, proper motion, and radial velocity uncertainties provided by Gaia.
 
 
+***
 API
-===
+***
 
 .. automodapi:: pyia
     :no-inheritance-diagram:
