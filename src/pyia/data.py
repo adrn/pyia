@@ -172,7 +172,7 @@ class GaiaData:
             ["radial_velocity", "radial_velocity_error", "parallax", "parallax_error"],
             [radial_velocity_unit, radial_velocity_unit, distance_unit, distance_unit],
         ):
-            if colname not in self.data.colnames:
+            if colname not in self.data.colnames and colname != default:
                 msg = f"Column '{colname}' not found in data table."
                 raise ValueError(msg)
 
