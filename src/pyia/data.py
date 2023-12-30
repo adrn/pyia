@@ -92,14 +92,13 @@ _fill_values = {"i": -1, "u": 0, "f": np.nan, "d": np.nan, "U": "", "S": ""}
 class GaiaData:
     """Class for loading and interacting with data from the Gaia mission. This
     should work with data from any data release, i.e., DR1 gaia_source or TGAS,
-    or DR2 gaia_source, or EDR3, DR3 gaia_source.
+    or DR2, EDR3, DR3 gaia_source tables.
 
     Parameters
     ----------
-    data : `astropy.table.Table`, `pandas.DataFrame`, dict_like, str
-        This must be pre-loaded data as any of the types listed above, or a
-        string filename containing a table that is readable by
-        `astropy.table.Table.read`.
+    data : str, path-like, `astropy.table.Table`, `pandas.DataFrame`, dict-like
+        This must be pre-loaded data as any of the types listed above, or a string
+        filename containing a table that is readable by `astropy.table.Table.read`.
     """
 
     def __init__(
@@ -282,7 +281,10 @@ class GaiaData:
 
         join_tables = {
             "dr1": {"dr2": "gaiadr2.dr1_neighbourhood"},
-            "dr2": {"edr3": "gaiaedr3.dr2_neighbourhood"},
+            "dr2": {
+                "edr3": "gaiaedr3.dr2_neighbourhood",
+                "dr3": "gaiadr3.dr2_neighbourhood",
+            },
         }
         source_id_prefixes = {"dr1": "dr1", "dr2": "dr2", "edr3": "dr3"}
 
@@ -299,15 +301,19 @@ class GaiaData:
             """
             return cls.from_query(query_str, **kwargs)
 
-        dr1, dr2 = sorted([source_id_dr, data_dr])
+        dr_a, dr_b = sorted([source_id_dr, data_dr])
+
+        if dr_b in join_tables and dr_a not in join_tables:
+            dr_a, dr_b = dr_b, dr_a
 
         try:
-            join_table = join_tables[dr1][dr2]
-            source_id_pref = source_id_prefixes[source_id_dr]
-            data_pref = source_id_prefixes[data_dr]
+            join_table = join_tables[dr_a][dr_b]
         except KeyError as err:
             msg = f"Failed to find join table for {source_id_dr} " f"to {data_dr}"
             raise KeyError(msg) from err
+
+        source_id_pref = source_id_prefixes[source_id_dr]
+        data_pref = source_id_prefixes[data_dr]
 
         query_str = f"""
             SELECT * FROM gaia{data_dr}.gaia_source AS gaia
@@ -662,9 +668,9 @@ class GaiaData:
 
         return (self._cache["A_G"], self._cache["A_B"], self._cache["A_R"])
 
-    def get_MG(self) -> u.Quantity:
-        """Return the absolute G-band magnitude."""
-        return self.phot_g_mean_mag - self.distmod
+    def get_abs_mag(self, mag_name: str = "phot_g_mean_mag") -> u.Quantity:
+        """Return the absolute magnitude."""
+        return getattr(self, mag_name) - self.distmod
 
     def get_G0(self, **kwargs: Any) -> u.Quantity:
         """Return the extinction-corrected G-band magnitude. Any arguments are

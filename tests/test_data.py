@@ -17,6 +17,7 @@ from pyia.data import GaiaData, gaia_unit_map
 
 dr_filenames = [
     get_pkg_data_filename("data/gdr2_sm.fits"),
+    get_pkg_data_filename("data/gedr3_sm.fits"),
     get_pkg_data_filename("data/gdr3_sm.fits"),
 ]
 
@@ -100,7 +101,11 @@ def test_computed_quantities(filename):
 
 @pytest.mark.parametrize("filename", dr_filenames)
 def test_cov(filename):
-    gd = GaiaData(filename)
+    kw = {}
+    if "gedr3" in filename:
+        kw["radial_velocity_colname"] = "dr2_radial_velocity"
+        kw["radial_velocity_error_colname"] = "dr2_radial_velocity_error"
+    gd = GaiaData(filename, **kw)
 
     C, _ = gd.get_cov()
     assert C.shape == (len(gd), 6, 6)
@@ -111,17 +116,25 @@ def test_cov(filename):
 
 @pytest.mark.parametrize("filename", dr_filenames)
 def test_skycoord(filename):
-    gd = GaiaData(filename)
-    gd = gd[np.isfinite(gd.radial_velocity)]
+    kw = {}
+    if "gedr3" in filename:
+        kw["radial_velocity_colname"] = "dr2_radial_velocity"
+        kw["radial_velocity_error_colname"] = "dr2_radial_velocity_error"
+    gd = GaiaData(filename, **kw)
+    gd = gd[np.isfinite(gd.get_radial_velocity())]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         c = gd.skycoord
         assert len(c) == len(gd)
 
-        c = gd.get_skycoord(radial_velocity="radial_velocity")
+        c = gd.get_skycoord()
         assert np.allclose(
-            gd.radial_velocity, c.radial_velocity, equal_nan=True, atol=1e-12, rtol=0
+            gd.get_radial_velocity(),
+            c.radial_velocity,
+            equal_nan=True,
+            atol=1e-12,
+            rtol=0,
         )
 
     with warnings.catch_warnings():
@@ -129,9 +142,13 @@ def test_skycoord(filename):
         gd["dist"] = (
             coord.Distance(parallax=gd.parallax, allow_negative=True).kpc * u.kpc
         )
-        c = gd.get_skycoord(radial_velocity="radial_velocity", distance="dist")
+        c = gd.get_skycoord(distance="dist")
         assert np.allclose(
-            gd.radial_velocity, c.radial_velocity, equal_nan=True, atol=1e-12, rtol=0
+            gd.get_radial_velocity(),
+            c.radial_velocity,
+            equal_nan=True,
+            atol=1e-12,
+            rtol=0,
         )
         assert np.allclose(gd.distance, c.distance, equal_nan=True, atol=1e-12, rtol=0)
 
@@ -178,10 +195,18 @@ def test_from_source_id():
     assert len(gd) == 1
     assert gd.designation[0].startswith("Gaia EDR3")
 
+    gd = GaiaData.from_source_id(tbl["source_id"][0], "dr2", data_dr="dr3")
+    assert len(gd) == 1
+    assert gd.designation[0].startswith("Gaia EDR3")
+
 
 @pytest.mark.parametrize("filename", dr_filenames)
 def test_get_samples(filename):
-    gd = GaiaData(filename)
+    kw = {}
+    if "gedr3" in filename:
+        kw["radial_velocity_colname"] = "dr2_radial_velocity"
+        kw["radial_velocity_error_colname"] = "dr2_radial_velocity_error"
+    gd = GaiaData(filename, **kw)
 
     g_samples = gd.get_error_samples(size=16)
     assert g_samples.ra.shape == (len(gd), 16)
@@ -189,7 +214,7 @@ def test_get_samples(filename):
     assert g_samples.parallax.shape == (len(gd), 16)
     assert g_samples.pmra.shape == (len(gd), 16)
     assert g_samples.pmdec.shape == (len(gd), 16)
-    assert g_samples.radial_velocity.shape == (len(gd), 16)
+    assert g_samples.get_radial_velocity().shape == (len(gd), 16)
 
     c = g_samples.get_skycoord(distance=False)
     assert c.shape == (1000, 16)
