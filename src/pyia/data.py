@@ -286,7 +286,7 @@ class GaiaData:
                 "dr3": "gaiadr3.dr2_neighbourhood",
             },
         }
-        source_id_prefixes = {"dr1": "dr1", "dr2": "dr2", "edr3": "dr3"}
+        source_id_prefixes = {"edr3": "dr3"}
 
         if source_id_dr is None:
             source_id_dr = LATEST_RELEASE.lower()
@@ -303,17 +303,14 @@ class GaiaData:
 
         dr_a, dr_b = sorted([source_id_dr, data_dr])
 
-        if dr_b in join_tables and dr_a not in join_tables:
-            dr_a, dr_b = dr_b, dr_a
-
         try:
             join_table = join_tables[dr_a][dr_b]
         except KeyError as err:
             msg = f"Failed to find join table for {source_id_dr} " f"to {data_dr}"
             raise KeyError(msg) from err
 
-        source_id_pref = source_id_prefixes[source_id_dr]
-        data_pref = source_id_prefixes[data_dr]
+        source_id_pref = source_id_prefixes.get(source_id_dr, source_id_dr)
+        data_pref = source_id_prefixes.get(data_dr, data_dr)
 
         query_str = f"""
             SELECT * FROM gaia{data_dr}.gaia_source AS gaia
@@ -331,6 +328,11 @@ class GaiaData:
         # nedbatchelder.com/blog/201010/surprising_getattr_recursion.html
         if name in ["data", "units"]:
             raise AttributeError()
+
+        if name == "designation" and "DESIGNATION" in self.data.colnames:
+            # TODO: workaround for issue reported to astroquery
+            # https://github.com/astropy/astroquery/issues/2911
+            return self.data["DESIGNATION"]
 
         try:
             coldata = self.data[name]

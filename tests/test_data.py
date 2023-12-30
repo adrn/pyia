@@ -183,21 +183,28 @@ def test_from_query():
 
 
 @pytest.mark.remote_data()
-def test_from_source_id():
-    filename = get_pkg_data_filename("data/gdr2_sm.fits")
-    tbl = filename
+@pytest.mark.filterwarnings("ignore::astropy.units.UnitsWarning")
+@pytest.mark.parametrize(
+    ("filename", "source_dr"),
+    [
+        ("data/gdr2_sm.fits", "dr2"),
+        ("data/gdr3_sm.fits", "dr3"),
+        ("data/gedr3_sm.fits", "edr3"),
+    ],
+)
+def test_from_source_id(filename, source_dr):
+    filename = get_pkg_data_filename(filename)
+    source_id = Table.read(filename)["source_id"][0]
 
-    gd = GaiaData.from_source_id(tbl["source_id"][0], "dr2", "dr2")
-    assert len(gd) == 1
-    assert gd.designation[0].startswith("Gaia DR2")
+    for data_dr in ["dr2", "edr3", "dr3"]:
+        if (source_dr == "dr3" and data_dr == "edr3") or (
+            source_dr == "edr3" and data_dr == "dr3"
+        ):
+            continue
 
-    gd = GaiaData.from_source_id(tbl["source_id"][0], "dr2", data_dr="edr3")
-    assert len(gd) == 1
-    assert gd.designation[0].startswith("Gaia EDR3")
-
-    gd = GaiaData.from_source_id(tbl["source_id"][0], "dr2", data_dr="dr3")
-    assert len(gd) == 1
-    assert gd.designation[0].startswith("Gaia EDR3")
+        gd = GaiaData.from_source_id(source_id, source_id_dr=source_dr, data_dr=data_dr)
+        assert len(gd) > 0
+        assert gd.designation[0].startswith(f"Gaia {data_dr.upper()}")
 
 
 @pytest.mark.parametrize("filename", dr_filenames)
