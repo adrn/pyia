@@ -87,7 +87,6 @@ testpaths = [
   "tests",
 ]
 
-
 [tool.coverage]
 run.source = ["pyia"]
 port.exclude_lines = [

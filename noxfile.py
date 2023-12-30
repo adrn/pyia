@@ -42,7 +42,9 @@ def tests(session: nox.Session) -> None:
     Run the unit and regular tests.
     """
     session.install(".[test]")
-    session.run("pytest", *session.posargs)
+    session.run(
+        "pytest", "--doctest-glob=*.rst", "--pyargs", ".", "docs", *session.posargs
+    )
 
 
 @nox.session(reuse_venv=True)
