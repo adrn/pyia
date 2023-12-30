@@ -47,6 +47,23 @@ def tests(session: nox.Session) -> None:
     )
 
 
+@nox.session
+def tests_remote_data(session: nox.Session) -> None:
+    """
+    Run the unit and regular tests with remote data.
+    """
+    session.install(".[test]")
+    session.run(
+        "pytest",
+        "--remote-data",
+        "--doctest-glob=*.rst",
+        "--pyargs",
+        ".",
+        "docs",
+        *session.posargs,
+    )
+
+
 @nox.session(reuse_venv=True)
 def docs(session: nox.Session) -> None:
     """
