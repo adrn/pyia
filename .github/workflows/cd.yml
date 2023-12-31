@@ -29,6 +29,30 @@ jobs:
 
       - uses: hynek/build-and-inspect-python-package@v2
 
+  # Upload to Test PyPI on every commit on main.
+  test-publish:
+    needs: [dist]
+    name: Test Publish to TestPyPI
+    environment: pypi
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    if:
+      github.repository_owner == 'adrn' && github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download packages built by build-and-inspect-python-package
+        uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: dist
+
+      - name: Upload package to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
   publish:
     needs: [dist]
     name: Publish to PyPI
@@ -39,14 +63,11 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download packages built by build-and-inspect-python-package
+        uses: actions/download-artifact@v4
         with:
           name: Packages
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@release/v1
         if: github.event_name == 'release' && github.event.action == 'published'
-        with:
-          # Remember to tell (test-)pypi about this repo before publishing
-          # Remove this line to publish to PyPI
-          repository-url: https://test.pypi.org/legacy/
