@@ -50,16 +50,16 @@ in the [documentation](http://pyia.rtfd.io) for more information.
 
 If you find this package useful, consider citing the Zenodo record:
 
-.. parsed-literal::
-
-    @article{adrian price-whelan_2018,
-        title={adrn/pyia: v0.2},
-        DOI={10.5281/zenodo.1228136},
-        abstractNote={a Python package for working with data from the Gaia mission},
-        publisher={Zenodo},
-        author={Adrian Price-Whelan},
-        year={2018},
-        month={Apr}
+    @software{pyia:v1_3,
+        author       = {Adrian Price-Whelan and
+                        Gabe Brammer},
+        title        = {pyia},
+        month        = jul,
+        year         = 2021,
+        publisher    = {Zenodo},
+        version      = {v1.3},
+        doi          = {10.5281/zenodo.5057363},
+        url          = {https://doi.org/10.5281/zenodo.5057363}
     }
 
 ## License
