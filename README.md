@@ -1,8 +1,7 @@
 # pyia
 
+[![Zenodo][zenodo-badge]][zenodo-link]
 [![Actions Status][actions-badge]][actions-link]
-
-[![GitHub Discussion][github-discussions-badge]][github-discussions-link]
 
 <!-- SPHINX-START -->
 
@@ -31,6 +30,8 @@ The documentation for `pyia` is hosted on [Read the Docs](http://pyia.rtfd.io).
 
 ## Installation and Dependencies
 
+[![PyPI version][pypi-version]][pypi-link]
+
 The recommended way to install `pyia` is using `pip` to install the latest
 development version:
 
@@ -39,9 +40,6 @@ development version:
 or, to install the latest stable version:
 
     pip install pyia
-
-[![PyPI version][pypi-version]][pypi-link]
-[![PyPI platforms][pypi-platforms]][pypi-link]
 
 See the [installation instructions](http://pyia.rtfd.io/en/latest/install.html)
 in the [documentation](http://pyia.rtfd.io) for more information.
