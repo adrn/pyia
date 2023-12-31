@@ -75,6 +75,9 @@ build.hooks.vcs.version-file = "src/pyia/_version.py"
 features = ["test"]
 scripts.test = "pytest {args}"
 
+[tool.setuptools_scm]
+# Enables uploads to testpypi - see https://github.com/pypa/setuptools_scm/issues/342
+local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
