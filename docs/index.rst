@@ -12,7 +12,7 @@ features provided by this package:
 
 * Access to *Gaia* data columns as Astropy :class:`~astropy.units.Quantity` objects with
   units associated (e.g., ``data.parallax`` will have associated units
-  :attr:`~astropy.units.milliarcsecond`).
+  ``astropy.units.milliarcsecond``).
 * Reconstruct covariance matrices for *Gaia* sources given errors and correlation
   coefficients (:meth:`pyia.GaiaData.get_cov`).
 * Generate random samples from the astrometric error distribution for each source (a
@@ -324,3 +324,5 @@ API
 
 .. automodapi:: pyia
     :no-inheritance-diagram:
+    :no-heading:
+    :headings: "=-"

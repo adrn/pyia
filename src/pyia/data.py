@@ -97,9 +97,31 @@ class GaiaData:
 
     Parameters
     ----------
-    data : str, path-like, `astropy.table.Table`, `pandas.DataFrame`, dict-like
-        This must be pre-loaded data as any of the types listed above, or a string
-        filename containing a table that is readable by `astropy.table.Table.read`.
+    data
+        The input Gaia data set, either as a pre-loaded table, data frame, or dictionary
+        of columns, or a filename to load. The filename can point to any file format
+        that can be read by :class:`astropy.table.Table`.
+    distance_colname
+        The name of the column to use for distance. Defaults to ``parallax``. This is
+        useful if you use a non-Gaia column for distance.
+    distance_error_colname
+        The name of the column to use for distance error. Defaults to
+        ``parallax_error``.
+    distance_unit
+        The Astropy unit of the distance column. Defaults to ``u.mas``. For example, if
+        you use the Bailer-Jones distances, you should set this to ``u.pc``.
+    radial_velocity_colname
+        The name of the column to use for radial velocity. Defaults to
+        ``radial_velocity``. This is useful if you use a non-Gaia column for radial
+        velocity, such as from a spectroscopic survey that is cross-matched to Gaia.
+    radial_velocity_error_colname
+        The name of the column to use for radial velocity error. Defaults to
+        ``radial_velocity_error``.
+    radial_velocity_unit
+        The Astropy unit of the radial velocity column. Defaults to ``u.km/u.s``.
+    **kwargs
+        Any additional keyword arguments are passed to :class:`astropy.table.Table`
+        ``read()``.
     """
 
     def __init__(
@@ -218,16 +240,16 @@ class GaiaData:
 
         Parameters
         ----------
-        query_str : str
+        query_str
             The string ADQL query to execute.
-        login_info : dict (optional)
+        login_info
             Username and password for the Gaia science archive as keys "user"
             and "password". If not specified, will use anonymous access, subject
             to the query limits.
 
         Returns
         -------
-        gaiadata : ``GaiaData``
+        GaiaData
             An instance of this object.
 
         """
@@ -267,12 +289,12 @@ class GaiaData:
 
         Parameters
         ----------
-        source_id : int
+        source_id
             The Gaia source_id
-        source_id_dr : str (optional)
+        source_id_dr
             The data release slug (e.g., 'dr2' or 'edr3') for the input
             source_id. Defaults to the latest data release.
-        data_dr : str (optional)
+        data_dr
             The data release slug (e.g., 'dr2' or 'edr3') to retrieve data from.
             Defaults to the latest data release.
         **kwargs
@@ -280,7 +302,7 @@ class GaiaData:
 
         Returns
         -------
-        gaiadata : `GaiaData`
+        GaiaData
             An instance of this object.
         """
 
@@ -417,8 +439,13 @@ class GaiaData:
 
         Parameters
         ----------
-        frame : str, `~astropy.coordinates.BaseCoordinateFrame`
+        frame
             The coordinate frame to return the proper motion vector in. Has shape `(nrows, 2)`
+
+        Returns
+        -------
+        astropy.units.Quantity
+            A 2D array of proper motion values in the specified frame.
         """
         if frame == "icrs" or isinstance(frame, coord.ICRS):
             _u = self.pmra.unit
@@ -446,16 +473,16 @@ class GaiaData:
 
         Parameters
         ----------
-        min_parallax : `~astropy.units.Quantity` (optional)
+        min_parallax
             If ``min_parallax`` specified, the parallaxes are clipped to this
             values (and it is also used to replace NaNs).
-        fill_value : `~astropy.units.Quantity` (optional)
-        allow_negative : bool (optional)
+        fill_value
+        allow_negative
             This is passed through to `~astropy.coordinates.Distance`.
 
         Returns
         -------
-        dist : `~astropy.coordinates.Distance`
+        `~astropy.coordinates.Distance`
             A ``Distance`` object with the data.
         """
 
@@ -499,8 +526,13 @@ class GaiaData:
 
         Parameters
         ----------
-        fill_value : `~astropy.units.Quantity` (optional)
+        fill_value
             If not ``None``, fill any invalid values with the specified value.
+
+        Returns
+        -------
+        `~astropy.units.Quantity`
+            The radial velocity values.
         """
         if self.radial_velocity_colname != "radial_velocity":
             rv = getattr(self, self.radial_velocity_colname)
@@ -549,9 +581,16 @@ class GaiaData:
 
         Parameters
         ----------
-        RAM_threshold : `astropy.units.Quantity`
+        RAM_threshold
             Raise an error if the expected covariance array is larger than the specified
             threshold. Set to ``None`` to disable this checking.
+
+        Returns
+        -------
+        `~numpy.ndarray`
+            The covariance matrix with shape `(nrows, 6, 6)`.
+        dict
+            A dictionary of the units of the covariance matrix rows/columns.
         """
 
         if RAM_threshold is not None:
@@ -629,8 +668,13 @@ class GaiaData:
 
         Parameters
         ----------
-        dustmaps_cls : ``dustmaps`` query class
+        dustmaps_cls
             By default, ``SFDQuery``.
+
+        Returns
+        -------
+        `~numpy.ndarray`
+            The E(B-V) reddening values.
         """
         if dustmaps_cls is None:
             from dustmaps.sfd import SFDQuery
@@ -650,14 +694,17 @@ class GaiaData:
 
         Parameters
         ----------
-        dustmaps_cls : ``dustmaps`` query class
+        dustmaps_cls
             By default, ``SFDQuery``.
 
         Returns
         -------
-        A_G
-        A_BP
-        A_RP
+        `~numpy.ndarray`
+            The A_G values
+        `~numpy.ndarray`
+            The A_BP values
+        `~numpy.ndarray`
+            The A_RP values
         """
         if "ebv" not in self._cache:
             if ebv is None:
@@ -742,23 +789,23 @@ class GaiaData:
 
         Parameters
         ----------
-        distance : `~astropy.coordinate.Distance`, `~astropy.units.Quantity`, ``False``, str (optional)
+        distance
             If ``None``, this inverts the parallax to get the distance from the
             Gaia data. If ``False``, distance information is ignored. If an
             astropy ``Quantity`` or ``Distance`` object, it sets the distance
             values of the output ``SkyCoord`` to whatever is passed in.
-        radial_velocity : `~astropy.units.Quantity`, str (optional)
+        radial_velocity
             If ``None``, this uses radial velocity data from the input Gaia
             table. If an astropy ``Quantity`` object, it sets the radial
             velocity values of the output ``SkyCoord`` to whatever is passed in.
-        ref_epoch : `~astropy.time.Time`, float (optional)
+        ref_epoch
             The reference epoch of the data. If not specified, this will try to
             read it from the input Gaia data table. If not provided, this will
             be set to whatever the most recent data release is, so, **beware**!
 
         Returns
         -------
-        c : `~astropy.coordinates.SkyCoord`
+        `~astropy.coordinates.SkyCoord`
             The coordinate object constructed from the input Gaia data.
         """
         _coord_opts = (distance, radial_velocity)
@@ -822,14 +869,14 @@ class GaiaData:
 
         Parameters
         ----------
-        size : int
+        size
             The number of random samples per source to generate.
-        rng : int, ``numpy.random.Generator`` (optional)
+        rng
             The random number generator or an integer seed.
 
         Returns
         -------
-        g_samples : `pyia.GaiaData`
+        `GaiaData`
             The same data table, but now each Gaia coordinate entry contains
             samples from the error distribution.
 
@@ -878,7 +925,7 @@ class GaiaData:
 
         Returns
         -------
-        filtered_g : `pyia.GaiaData`
+        `GaiaData`
             The same data table, but filtered.
         """
         mask = np.ones(len(self), dtype=bool)
