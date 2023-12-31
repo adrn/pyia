@@ -27,6 +27,9 @@ exclude_patterns = [
 ]
 
 html_theme = "pydata_sphinx_theme"
+html_css_files = [
+    "css/custom.css",
+]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
