@@ -1,7 +1,9 @@
 """ Data structures. """
 
 # Standard library
+import logging
 import pathlib
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Third-party
@@ -91,18 +93,25 @@ _fill_values = {"i": -1, "u": 0, "f": np.nan, "d": np.nan, "U": "", "S": ""}
 class GaiaData:
     """Class for loading and interacting with data from the Gaia mission. This
     should work with data from any data release, i.e., DR1 gaia_source or TGAS,
-    or DR2 gaia_source, or EDR3, DR3 gaia_source.
+    or DR2, EDR3, DR3 gaia_source tables.
 
     Parameters
     ----------
-    data : `astropy.table.Table`, `pandas.DataFrame`, dict_like, str
-        This must be pre-loaded data as any of the types listed above, or a
-        string filename containing a table that is readable by
-        `astropy.table.Table.read`.
+    data : str, path-like, `astropy.table.Table`, `pandas.DataFrame`, dict-like
+        This must be pre-loaded data as any of the types listed above, or a string
+        filename containing a table that is readable by `astropy.table.Table.read`.
     """
 
     def __init__(
-        self, data: Union[Table, str, pathlib.Path, Dict[str, Any]], **kwargs: Any
+        self,
+        data: Union[Table, str, pathlib.Path, Dict[str, Any]],
+        distance_colname: str = "parallax",
+        distance_error_colname: str = "parallax_error",
+        distance_unit: Union[u.Unit, str, None] = None,
+        radial_velocity_colname: str = "radial_velocity",
+        radial_velocity_error_colname: str = "radial_velocity_error",
+        radial_velocity_unit: Union[u.Unit, str, None] = None,
+        **kwargs: Any,
     ) -> None:
         if not isinstance(data, Table):
             if isinstance(data, (str, pathlib.Path)):
@@ -140,11 +149,52 @@ class GaiaData:
                 except ValueError:
                     self._invalid_units[c] = data[c].unit
 
-        # HACK: hard coded
-        self._has_rv = (
-            "radial_velocity" in self.data.colnames
-            or "dr2_radial_velocity" in self.data.colnames
-        )
+        self.radial_velocity_colname = str(radial_velocity_colname)
+        self.radial_velocity_error_colname = str(radial_velocity_error_colname)
+        self.distance_colname = str(distance_colname)
+        self.distance_error_colname = str(distance_error_colname)
+        self._extra_kw: Dict[str, Union[str, u.Unit]] = {
+            "distance_colname": self.distance_colname,
+            "distance_error_colname": self.distance_error_colname,
+            "distance_unit": distance_unit,
+            "radial_velocity_colname": self.radial_velocity_colname,
+            "radial_velocity_error_colname": self.radial_velocity_error_colname,
+            "radial_velocity_unit": radial_velocity_unit,
+        }
+
+        for colname, default, unit in zip(
+            [
+                self.radial_velocity_colname,
+                self.radial_velocity_error_colname,
+                self.distance_colname,
+                self.distance_error_colname,
+            ],
+            ["radial_velocity", "radial_velocity_error", "parallax", "parallax_error"],
+            [radial_velocity_unit, radial_velocity_unit, distance_unit, distance_unit],
+        ):
+            if colname not in self.data.colnames and colname != default:
+                msg = f"Column '{colname}' not found in data table."
+                raise ValueError(msg)
+
+            if colname != default:
+                col = self.data[colname]
+                if not hasattr(col, "unit") or col.unit == u.one or col.unit is None:
+                    if unit is None:
+                        msg = (
+                            "If you use a custom column for radial velocity or "
+                            "distance, and/or their respective errors, that column "
+                            "must have an associated astropy unit, or you must specify "
+                            f"the corresponding ..._unit keyword argument. {colname} "
+                            "does not have a unit."
+                        )
+                        raise ValueError(msg)
+                    self.units[colname] = unit
+
+                elif unit is not None:
+                    self.data[colname] = u.Quantity(col).to_value(unit)
+                    self.units[colname] = unit
+
+        self._has_rv = self.radial_velocity_colname in self.data.colnames
 
         # For caching later
         self._cache: Dict[Any, Any] = {}
@@ -157,8 +207,8 @@ class GaiaData:
         verbose: bool = False,
     ) -> "GaiaData":
         """
-        Run the specified query and return a `GaiaData` instance with the
-        returned data.
+        Run the specified query and return a ``GaiaData`` instance with the returned
+        data.
 
         This is meant only to be used for quick queries to the main Gaia science
         archive. For longer queries and more customized usage, use TAP access to
@@ -170,18 +220,19 @@ class GaiaData:
         ----------
         query_str : str
             The string ADQL query to execute.
-        login_info : dict, optional
+        login_info : dict (optional)
             Username and password for the Gaia science archive as keys "user"
             and "password". If not specified, will use anonymous access, subject
             to the query limits.
 
         Returns
         -------
-        gaiadata : `GaiaData`
+        gaiadata : ``GaiaData``
             An instance of this object.
 
         """
         try:
+            from astroquery import log
             from astroquery.gaia import Gaia
         except ImportError as err:
             msg = (
@@ -193,6 +244,9 @@ class GaiaData:
 
         if login_info is not None:
             Gaia.login(**login_info)
+
+        level = logging.DEBUG if verbose else logging.WARNING
+        log.setLevel(level)
 
         job = Gaia.launch_job_async(query_str, verbose=verbose)
         tbl = job.get_results()
@@ -215,10 +269,10 @@ class GaiaData:
         ----------
         source_id : int
             The Gaia source_id
-        source_id_dr : str, optional
+        source_id_dr : str (optional)
             The data release slug (e.g., 'dr2' or 'edr3') for the input
             source_id. Defaults to the latest data release.
-        data_dr : str, optional
+        data_dr : str (optional)
             The data release slug (e.g., 'dr2' or 'edr3') to retrieve data from.
             Defaults to the latest data release.
         **kwargs
@@ -232,9 +286,12 @@ class GaiaData:
 
         join_tables = {
             "dr1": {"dr2": "gaiadr2.dr1_neighbourhood"},
-            "dr2": {"edr3": "gaiaedr3.dr2_neighbourhood"},
+            "dr2": {
+                "edr3": "gaiaedr3.dr2_neighbourhood",
+                "dr3": "gaiadr3.dr2_neighbourhood",
+            },
         }
-        source_id_prefixes = {"dr1": "dr1", "dr2": "dr2", "edr3": "dr3"}
+        source_id_prefixes = {"edr3": "dr3"}
 
         if source_id_dr is None:
             source_id_dr = LATEST_RELEASE.lower()
@@ -249,15 +306,16 @@ class GaiaData:
             """
             return cls.from_query(query_str, **kwargs)
 
-        dr1, dr2 = sorted([source_id_dr, data_dr])
+        dr_a, dr_b = sorted([source_id_dr, data_dr])
 
         try:
-            join_table = join_tables[dr1][dr2]
-            source_id_pref = source_id_prefixes[source_id_dr]
-            data_pref = source_id_prefixes[data_dr]
+            join_table = join_tables[dr_a][dr_b]
         except KeyError as err:
             msg = f"Failed to find join table for {source_id_dr} " f"to {data_dr}"
             raise KeyError(msg) from err
+
+        source_id_pref = source_id_prefixes.get(source_id_dr, source_id_dr)
+        data_pref = source_id_prefixes.get(data_dr, data_dr)
 
         query_str = f"""
             SELECT * FROM gaia{data_dr}.gaia_source AS gaia
@@ -276,25 +334,24 @@ class GaiaData:
         if name in ["data", "units"]:
             raise AttributeError()
 
-        lookup_name = name
-        # HACK: EDR3 calls this "dr2_radial_velocity"
-        # TODO: replace with idea of setting RV and distance column names above
-        if (
-            name.startswith("radial_velocity")
-            and "radial_velocity" not in self.data.colnames
-            and "dr2_radial_velocity" in self.data.colnames
-        ):
-            lookup_name = f"dr2_{name}"
+        if name == "designation" and "DESIGNATION" in self.data.colnames:
+            # TODO: workaround for issue reported to astroquery
+            # https://github.com/astropy/astroquery/issues/2911
+            return self.data["DESIGNATION"]
 
-        coldata = self.data[lookup_name]
-        if hasattr(coldata, "mask") and coldata.mask is not None:
-            arr = coldata.filled(_fill_values.get(coldata.dtype.char, None))
-        else:
-            arr = coldata
-        arr = np.asarray(arr)
+        try:
+            coldata = self.data[name]
+            if hasattr(coldata, "mask") and coldata.mask is not None:
+                arr = coldata.filled(_fill_values.get(coldata.dtype.char, None))
+            else:
+                arr = coldata
+            arr = np.asarray(arr)
 
-        if name in self.units:
-            return arr * self.units[name]
+            if name in self.units:
+                return arr * self.units[name]
+        except Exception as err:
+            msg = "Failed to get attribute."
+            raise AttributeError(msg) from err
 
         return arr
 
@@ -329,7 +386,7 @@ class GaiaData:
             slc = slice(slc, slc + 1)
         elif isinstance(slc, str):
             return self.__getattr__(slc)
-        return self.__class__(self.data[slc])
+        return self.__class__(self.data[slc], **self._extra_kw)
 
     def __setitem__(self, name: Any, val: Any) -> None:
         if hasattr(val, "unit"):
@@ -381,17 +438,18 @@ class GaiaData:
     def get_distance(
         self,
         min_parallax: Optional[u.Quantity[angle]] = None,
-        parallax_fill_value: float = np.nan,
+        fill_value: float = np.nan,
         allow_negative: bool = False,
-    ) -> u.Quantity[u.kpc]:
+    ) -> u.Quantity:
         """Compute distance from parallax (by inverting the parallax) using
         `~astropy.coordinates.Distance`.
 
         Parameters
         ----------
         min_parallax : `~astropy.units.Quantity` (optional)
-            If `min_parallax` specified, the parallaxes are clipped to this
+            If ``min_parallax`` specified, the parallaxes are clipped to this
             values (and it is also used to replace NaNs).
+        fill_value : `~astropy.units.Quantity` (optional)
         allow_negative : bool (optional)
             This is passed through to `~astropy.coordinates.Distance`.
 
@@ -401,20 +459,26 @@ class GaiaData:
             A ``Distance`` object with the data.
         """
 
+        if self.distance_colname != "parallax":
+            return coord.Distance(
+                getattr(self, self.distance_colname), allow_negative=allow_negative
+            )
+
         plx = self.parallax.copy()
 
-        if np.isnan(parallax_fill_value):
-            parallax_fill_value = parallax_fill_value * u.mas
+        if np.isnan(fill_value) and not hasattr(fill_value, "unit"):
+            fill_value = fill_value * u.pc
 
+        dist = coord.Distance(parallax=plx, allow_negative=allow_negative)
+        mask = np.isnan(dist)
         if min_parallax is not None:
-            clipped = plx < min_parallax
-            clipped |= ~np.isfinite(plx)
-            plx[clipped] = parallax_fill_value
+            mask |= plx < min_parallax
 
-        return coord.Distance(parallax=plx, allow_negative=allow_negative)
+        dist[mask] = fill_value
+        return dist
 
     @property
-    def distance(self) -> u.Quantity[u.kpc]:
+    def distance(self) -> u.Quantity:
         """Assumes 1/parallax. Has shape `(nrows,)`.
 
         This attribute will raise an error when there are negative or zero
@@ -438,8 +502,16 @@ class GaiaData:
         fill_value : `~astropy.units.Quantity` (optional)
             If not ``None``, fill any invalid values with the specified value.
         """
-        rv = self.radial_velocity.copy()
-        rv[~np.isfinite(rv)] = fill_value
+        if self.radial_velocity_colname != "radial_velocity":
+            rv = getattr(self, self.radial_velocity_colname)
+        else:
+            rv = self.radial_velocity.copy()
+
+        if fill_value is not None:
+            if not hasattr(fill_value, "unit"):
+                fill_value = fill_value * rv.unit
+            rv[~np.isfinite(rv)] = fill_value
+
         return rv
 
     @property
@@ -456,7 +528,9 @@ class GaiaData:
     def get_cov(
         self,
         RAM_threshold: u.Quantity = 1 * u.gigabyte,
+        coords: Optional[List[str]] = None,
         units: Optional[Dict[str, u.Unit]] = None,
+        warn_missing_corr: bool = False,
     ) -> Tuple[npt.NDArray, Dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need
@@ -491,48 +565,54 @@ class GaiaData:
                 )
                 raise RuntimeError(msg)
 
+        if coords is None:
+            coords = [
+                "ra",
+                "dec",
+                self.distance_colname,
+                "pmra",
+                "pmdec",
+                self.radial_velocity_colname,
+            ]
+
         if units is None:
             units = {}
-        units.setdefault("ra", u.deg)
-        units.setdefault("dec", u.deg)
-        units.setdefault("parallax", u.mas)
-        units.setdefault("pmra", u.mas / u.yr)
-        units.setdefault("pmdec", u.mas / u.yr)
-        units.setdefault("radial_velocity", u.km / u.s)
+
+        for name in coords:
+            units.setdefault(name, self.units[name])
 
         # The full returned matrix
-        C = np.zeros((len(self), 6, 6))
-
-        # We handle radial_velocity separately below - doesn't have correlation
-        # coefficients with the astrometric parameters
-        names = ["ra", "dec", "parallax", "pmra", "pmdec"]
+        C = np.zeros((len(self), len(coords), len(coords)))
 
         # pre-load the diagonal
-        for i, name in enumerate(names):
-            if name + "_error" in self.data.colnames:
+        for i, name in enumerate(coords):
+            if name == self.distance_colname:
+                err = getattr(self, self.distance_error_colname)
+            elif name == self.radial_velocity_colname:
+                err = getattr(self, self.radial_velocity_error_colname)
+            elif name + "_error" in self.data.colnames:
                 err = getattr(self, name + "_error")
-                C[:, i, i] = err.to(units[name]).value ** 2
             else:
-                C[:, i, i] = np.nan
+                err = 0.0 * units[name]
+            C[:, i, i] = err.to_value(units[name]) ** 2
 
-        if self._has_rv:
-            name = "radial_velocity"
-            err = getattr(self, name + "_error")
-            C[:, 5, 5] = err.to(units[name]).value ** 2
-        else:
-            C[:, 5, 5] = np.inf
-
-        C[:, 5, 5][np.isnan(C[:, 5, 5])] = np.inf  # missing values
-
-        for i, name1 in enumerate(names):
-            for j, name2 in enumerate(names):
+        for i, name1 in enumerate(coords):
+            for j, name2 in enumerate(coords):
                 if j <= i:
                     continue
 
                 if f"{name1}_{name2}_corr" in self.data.colnames:
                     corr = getattr(self, f"{name1}_{name2}_corr")
                 else:
-                    corr = np.nan
+                    corr = 0.0
+
+                    if warn_missing_corr:
+                        warnings.warn(
+                            f"Missing correlation coefficient for {name1} and {name2}. "
+                            "Setting to zero.",
+                            RuntimeWarning,
+                            stacklevel=1,
+                        )
 
                 # We don't need to worry about units here because the diagonal
                 # values have already been converted
@@ -599,9 +679,9 @@ class GaiaData:
 
         return (self._cache["A_G"], self._cache["A_B"], self._cache["A_R"])
 
-    def get_MG(self) -> u.Quantity:
-        """Return the absolute G-band magnitude."""
-        return self.phot_g_mean_mag - self.distmod
+    def get_abs_mag(self, mag_name: str = "phot_g_mean_mag") -> u.Quantity:
+        """Return the absolute magnitude."""
+        return getattr(self, mag_name) - self.distmod
 
     def get_G0(self, **kwargs: Any) -> u.Quantity:
         """Return the extinction-corrected G-band magnitude. Any arguments are
@@ -693,7 +773,7 @@ class GaiaData:
 
         kw = {}
         if self._has_rv:
-            kw["radial_velocity"] = self.radial_velocity
+            kw["radial_velocity"] = self.get_radial_velocity()
 
         # Reference epoch
         if "ref_epoch" in self.data.colnames:
@@ -712,7 +792,7 @@ class GaiaData:
             kw.pop("radial_velocity")
 
         if distance is None:
-            kw["distance"] = self.distance
+            kw["distance"] = self.get_distance(allow_negative=True)
         elif distance is not False and distance is not None:
             if isinstance(distance, str):
                 kw["distance"] = self[distance]
@@ -730,6 +810,7 @@ class GaiaData:
         self,
         size: int = 1,
         rng: Union[int, np.random.Generator, None] = None,
+        **get_cov_kwargs: Any,
     ) -> "GaiaData":
         """Generate a sampling from the Gaia error distribution for each source.
 
@@ -743,7 +824,7 @@ class GaiaData:
         ----------
         size : int
             The number of random samples per source to generate.
-        rng : int, ``numpy.random.Generator``, optional
+        rng : int, ``numpy.random.Generator`` (optional)
             The random number generator or an integer seed.
 
         Returns
@@ -759,25 +840,28 @@ class GaiaData:
             rng = np.random.default_rng()
         rng = np.random.default_rng(rng)
 
-        C, C_units = self.get_cov()
-        C = C.copy()
-        rv_mask = ~np.isfinite(C[:, 5, 5])
-        C[rv_mask, 5, 5] = 0.0
+        C, C_units = self.get_cov(**get_cov_kwargs)
+        K = C.shape[1]
+
+        # Turn missing values into 0 - but if diagonal is missing, keep note:
+        nan_diag = np.where(np.isnan(C[:, np.arange(K), np.arange(K)]))
+        C[np.isnan(C)] = 0.0
 
         arrs = []
         for k, unit in C_units.items():
             arrs.append(getattr(self, k).to_value(unit))
         y = np.stack(arrs).T
 
-        samples = np.array(
+        y_samples = np.array(
             [rng.multivariate_normal(y[i], C[i], size=size) for i in range(len(y))]
         )
+        y_samples[nan_diag[0], :, nan_diag[1]] = np.nan
 
         d = self.data.copy()
         for i, (k, unit) in enumerate(C_units.items()):
-            d[k] = samples[..., i] * unit
+            d[k] = y_samples[..., i] * unit
 
-        return self.__class__(d)
+        return self.__class__(d, **self._extra_kw)
 
     def filter(self, **kwargs: Any) -> "GaiaData":
         """

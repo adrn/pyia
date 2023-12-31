@@ -43,7 +43,8 @@ test = [
   "pytest-cov >=3",
   "pytest-astropy",
   "pyyaml",
-  "scipy"
+  "scipy",
+  "astroquery"
 ]
 dev = [
   "pytest >=6",
@@ -51,12 +52,12 @@ dev = [
 ]
 docs = [
   "sphinx>=7.0",
-  "myst_parser>=0.13",
   "sphinx_copybutton",
   "sphinx_autodoc_typehints",
-  "furo>=2023.08.17",
   "matplotlib",
   "scipy",
+  "sphinx-automodapi",
+  "pydata-sphinx-theme",
 ]
 
 [project.urls]
@@ -81,12 +82,15 @@ addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
 xfail_strict = true
 filterwarnings = [
   "error",
+  "ignore:unclosed file:ResourceWarning",
+  "ignore:unclosed <socket:ResourceWarning",
+  "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
+  "ignore:negative parallaxes are converted:astropy.utils.exceptions.AstropyWarning"
 ]
 log_cli_level = "INFO"
 testpaths = [
   "tests",
 ]
-
 
 [tool.coverage]
 run.source = ["pyia"]
@@ -111,6 +115,7 @@ module = "pyia.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_untyped_decorators = false
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
