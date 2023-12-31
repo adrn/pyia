@@ -1,6 +1,7 @@
 """ Data structures. """
 
 # Standard library
+import logging
 import pathlib
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -231,6 +232,7 @@ class GaiaData:
 
         """
         try:
+            from astroquery import log
             from astroquery.gaia import Gaia
         except ImportError as err:
             msg = (
@@ -242,6 +244,9 @@ class GaiaData:
 
         if login_info is not None:
             Gaia.login(**login_info)
+
+        level = logging.DEBUG if verbose else logging.WARNING
+        log.setLevel(level)
 
         job = Gaia.launch_job_async(query_str, verbose=verbose)
         tbl = job.get_results()
