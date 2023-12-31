@@ -6,7 +6,7 @@ pyia: a Python package for working with *Gaia* data
 
 Source code `on GitHub <https://github.com/adrn/pyia>`_.
 
-:mod:`pyia` provides a class for working with data from the `ESA *Gaia* mission
+:mod:`pyia` provides a class for working with data from the `ESA Gaia mission
 <https://www.esa.int/Science_Exploration/Space_Science/Gaia>`_. Here is a short list of
 features provided by this package:
 
@@ -101,7 +101,7 @@ From an ADQL query to the Gaia archive
 --------------------------------------
 
 You can also create a :class:`~pyia.GaiaData` instance by executing a remote query to
-the `*Gaia* archive <https://gea.esac.esa.int/archive/>`_ using the
+the `Gaia archive <https://gea.esac.esa.int/archive/>`_ using the
 :meth:`~pyia.GaiaData.from_query` class method. This method takes in a string ADQL query
 and returns a new :class:`~pyia.GaiaData` instance with the results of the query. For
 example, to query the *Gaia* archive for the 100 brightest sources within 10 degrees of

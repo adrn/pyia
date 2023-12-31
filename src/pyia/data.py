@@ -207,8 +207,8 @@ class GaiaData:
         verbose: bool = False,
     ) -> "GaiaData":
         """
-        Run the specified query and return a `GaiaData` instance with the
-        returned data.
+        Run the specified query and return a ``GaiaData`` instance with the returned
+        data.
 
         This is meant only to be used for quick queries to the main Gaia science
         archive. For longer queries and more customized usage, use TAP access to
@@ -220,14 +220,14 @@ class GaiaData:
         ----------
         query_str : str
             The string ADQL query to execute.
-        login_info : dict, optional
+        login_info : dict (optional)
             Username and password for the Gaia science archive as keys "user"
             and "password". If not specified, will use anonymous access, subject
             to the query limits.
 
         Returns
         -------
-        gaiadata : `GaiaData`
+        gaiadata : ``GaiaData``
             An instance of this object.
 
         """
@@ -269,10 +269,10 @@ class GaiaData:
         ----------
         source_id : int
             The Gaia source_id
-        source_id_dr : str, optional
+        source_id_dr : str (optional)
             The data release slug (e.g., 'dr2' or 'edr3') for the input
             source_id. Defaults to the latest data release.
-        data_dr : str, optional
+        data_dr : str (optional)
             The data release slug (e.g., 'dr2' or 'edr3') to retrieve data from.
             Defaults to the latest data release.
         **kwargs
@@ -447,7 +447,7 @@ class GaiaData:
         Parameters
         ----------
         min_parallax : `~astropy.units.Quantity` (optional)
-            If `min_parallax` specified, the parallaxes are clipped to this
+            If ``min_parallax`` specified, the parallaxes are clipped to this
             values (and it is also used to replace NaNs).
         fill_value : `~astropy.units.Quantity` (optional)
         allow_negative : bool (optional)
@@ -824,7 +824,7 @@ class GaiaData:
         ----------
         size : int
             The number of random samples per source to generate.
-        rng : int, ``numpy.random.Generator``, optional
+        rng : int, ``numpy.random.Generator`` (optional)
             The random number generator or an integer seed.
 
         Returns
