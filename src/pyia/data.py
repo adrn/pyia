@@ -91,9 +91,9 @@ _fill_values = {"i": -1, "u": 0, "f": np.nan, "d": np.nan, "U": "", "S": ""}
 
 
 class GaiaData:
-    """Class for loading and interacting with data from the Gaia mission. This
-    should work with data from any data release, i.e., DR1 gaia_source or TGAS,
-    or DR2, EDR3, DR3 gaia_source tables.
+    """The main class for loading and interacting with data from the Gaia mission. This
+    should work with Gaia catalog data from any data release, i.e., DR1 gaia_source or
+    TGAS, or DR2, EDR3, DR3 gaia_source tables.
 
     Parameters
     ----------
@@ -444,7 +444,7 @@ class GaiaData:
 
         Returns
         -------
-        astropy.units.Quantity
+        :class:`~astropy.units.Quantity`
             A 2D array of proper motion values in the specified frame.
         """
         if frame == "icrs" or isinstance(frame, coord.ICRS):
@@ -531,7 +531,7 @@ class GaiaData:
 
         Returns
         -------
-        :class:`~astropy.units.Quantity`
+        :class:`~astropy.units.Quantity` [velocity]
             The radial velocity values.
         """
         if self.radial_velocity_colname != "radial_velocity":
@@ -686,7 +686,7 @@ class GaiaData:
 
     def get_ext(
         self, ebv: Optional[npt.ArrayLike] = None, dustmaps_cls: Optional[Any] = None
-    ) -> npt.NDArray:
+    ) -> Tuple[u.Quantity[u.mag], u.Quantity[u.mag], u.Quantity[u.mag]]:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -753,7 +753,7 @@ class GaiaData:
         """Compute and return the unit-weight error."""
         return np.sqrt(self.astrometric_chi2_al / (self.astrometric_n_good_obs_al - 5))
 
-    def get_ruwe(self) -> npt.NDArray:
+    def get_ruwe(self) -> None:
         msg = (
             "Use the Gaia DR3 RUWE value instead. This can be accessed with the `.ruwe`"
             " attribute if it is present in the data table."

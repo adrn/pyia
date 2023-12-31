@@ -1,3 +1,5 @@
+@import "../basic.css";
+
 :root {
-  --pst-font-size-base: 12px;
+  --pst-font-size-base: 14px;
 }
