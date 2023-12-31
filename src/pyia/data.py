@@ -438,7 +438,7 @@ class GaiaData:
     def get_distance(
         self,
         min_parallax: Optional[u.Quantity[angle]] = None,
-        parallax_fill_value: float = np.nan,
+        fill_value: float = np.nan,
         allow_negative: bool = False,
     ) -> u.Quantity:
         """Compute distance from parallax (by inverting the parallax) using
@@ -449,6 +449,7 @@ class GaiaData:
         min_parallax : `~astropy.units.Quantity` (optional)
             If `min_parallax` specified, the parallaxes are clipped to this
             values (and it is also used to replace NaNs).
+        fill_value : `~astropy.units.Quantity` (optional)
         allow_negative : bool (optional)
             This is passed through to `~astropy.coordinates.Distance`.
 
@@ -465,15 +466,16 @@ class GaiaData:
 
         plx = self.parallax.copy()
 
-        if np.isnan(parallax_fill_value):
-            parallax_fill_value = parallax_fill_value * u.mas
+        if np.isnan(fill_value) and not hasattr(fill_value, "unit"):
+            fill_value = fill_value * u.pc
 
+        dist = coord.Distance(parallax=plx, allow_negative=allow_negative)
+        mask = np.isnan(dist)
         if min_parallax is not None:
-            clipped = plx < min_parallax
-            clipped |= ~np.isfinite(plx)
-            plx[clipped] = parallax_fill_value
+            mask |= plx < min_parallax
 
-        return coord.Distance(parallax=plx, allow_negative=allow_negative)
+        dist[mask] = fill_value
+        return dist
 
     @property
     def distance(self) -> u.Quantity:
@@ -506,7 +508,9 @@ class GaiaData:
             rv = self.radial_velocity.copy()
 
         if fill_value is not None:
-            rv[~np.isfinite(rv)] = fill_value * rv.unit
+            if not hasattr(fill_value, "unit"):
+                fill_value = fill_value * rv.unit
+            rv[~np.isfinite(rv)] = fill_value
 
         return rv
 
