@@ -84,7 +84,8 @@ filterwarnings = [
   "error",
   "ignore:unclosed file:ResourceWarning",
   "ignore:unclosed <socket:ResourceWarning",
-  "ignore:unclosed <ssl.SSLSocket:ResourceWarning"
+  "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
+  "ignore:negative parallaxes are converted:astropy.utils.exceptions.AstropyWarning"
 ]
 log_cli_level = "INFO"
 testpaths = [
