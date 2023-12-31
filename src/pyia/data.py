@@ -126,7 +126,7 @@ class GaiaData:
 
     def __init__(
         self,
-        data: Union[Table, str, pathlib.Path, Dict[str, Any]],
+        data: Union[Table, str, pathlib.Path, Dict[str, npt.ArrayLike]],
         distance_colname: str = "parallax",
         distance_error_colname: str = "parallax_error",
         distance_unit: Union[u.Unit, str, None] = None,
@@ -469,7 +469,7 @@ class GaiaData:
         allow_negative: bool = False,
     ) -> u.Quantity:
         """Compute distance from parallax (by inverting the parallax) using
-        `~astropy.coordinates.Distance`.
+        :class:`~astropy.coordinates.Distance`.
 
         Parameters
         ----------
@@ -478,11 +478,11 @@ class GaiaData:
             values (and it is also used to replace NaNs).
         fill_value
         allow_negative
-            This is passed through to `~astropy.coordinates.Distance`.
+            This is passed through to :class:`~astropy.coordinates.Distance`.
 
         Returns
         -------
-        `~astropy.coordinates.Distance`
+        :class:`~astropy.coordinates.Distance`
             A ``Distance`` object with the data.
         """
 
@@ -531,7 +531,7 @@ class GaiaData:
 
         Returns
         -------
-        `~astropy.units.Quantity`
+        :class:`~astropy.units.Quantity`
             The radial velocity values.
         """
         if self.radial_velocity_colname != "radial_velocity":
@@ -587,7 +587,7 @@ class GaiaData:
 
         Returns
         -------
-        `~numpy.ndarray`
+        :class:`~numpy.ndarray`
             The covariance matrix with shape `(nrows, 6, 6)`.
         dict
             A dictionary of the units of the covariance matrix rows/columns.
@@ -673,8 +673,8 @@ class GaiaData:
 
         Returns
         -------
-        `~numpy.ndarray`
-            The E(B-V) reddening values.
+        :class:`numpy.ndarray`
+             The E(B-V) reddening values.
         """
         if dustmaps_cls is None:
             from dustmaps.sfd import SFDQuery
@@ -699,11 +699,11 @@ class GaiaData:
 
         Returns
         -------
-        `~numpy.ndarray`
+        :class:`~numpy.ndarray`
             The A_G values
-        `~numpy.ndarray`
+        :class:`~numpy.ndarray`
             The A_BP values
-        `~numpy.ndarray`
+        :class:`~numpy.ndarray`
             The A_RP values
         """
         if "ebv" not in self._cache:
@@ -766,8 +766,8 @@ class GaiaData:
     @property
     def skycoord(self) -> coord.SkyCoord:
         """
-        Return an `~astropy.coordinates.SkyCoord` object to represent
-        all coordinates. Note: this requires Astropy v3.0 or higher!
+        Return an :class:`~astropy.coordinates.SkyCoord` object to represent all
+        coordinates. Note: this requires Astropy v3.0 or higher!
 
         Use the ``get_skycoord()`` method for more flexible access.
         """
@@ -780,7 +780,7 @@ class GaiaData:
         ref_epoch: str = REF_EPOCH[LATEST_RELEASE],
     ) -> coord.SkyCoord:
         """
-        Return an `~astropy.coordinates.SkyCoord` object to represent
+        Return an :class:`~astropy.coordinates.SkyCoord` object to represent
         all coordinates. Note: this requires Astropy v3.0 or higher!
 
         `ref_epoch` is used to set the `obstime` attribute on the coordinate
@@ -805,7 +805,7 @@ class GaiaData:
 
         Returns
         -------
-        `~astropy.coordinates.SkyCoord`
+        :class:`~astropy.coordinates.SkyCoord`
             The coordinate object constructed from the input Gaia data.
         """
         _coord_opts = (distance, radial_velocity)
