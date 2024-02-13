@@ -67,4 +67,4 @@ If you find this package useful, consider citing the Zenodo record:
 Copyright 2017-2024 Adrian Price-Whelan and contributors.
 
 `Pyia` is free software made available under the MIT License. For details see
-the [LICENSE](https://github.com/adrn/pyia/blob/master/LICENSE) file.
+the [LICENSE](https://github.com/adrn/pyia/blob/main/LICENSE) file.
