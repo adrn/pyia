@@ -677,7 +677,7 @@ class GaiaData:
              The E(B-V) reddening values.
         """
         if dustmaps_cls is None:
-            from dustmaps.sfd import SFDQuery
+            from dustmaps.sfd import SFDQuery  # pylint: disable=import-error
 
             dustmaps_cls = SFDQuery
 
