@@ -402,7 +402,7 @@ class GaiaData:
         return list(super().__dir__()) + [str(k) for k in self.data.columns]
 
     def __getitem__(
-        self, slc: Union[int, slice, npt.NDArray]
+        self, slc: Union[int, slice, npt.NDArray, str]
     ) -> Union["GaiaData", Any]:
         if isinstance(slc, int):
             slc = slice(slc, slc + 1)
@@ -682,7 +682,7 @@ class GaiaData:
             dustmaps_cls = SFDQuery
 
         c = self.get_skycoord(distance=False)
-        return dustmaps_cls().query(c)
+        return np.array(dustmaps_cls().query(c))
 
     def get_ext(
         self, ebv: Optional[npt.ArrayLike] = None, dustmaps_cls: Optional[Any] = None
@@ -928,7 +928,7 @@ class GaiaData:
         `GaiaData`
             The same data table, but filtered.
         """
-        mask = np.ones(len(self), dtype=bool)
+        mask: npt.NDArray[np.bool_] = np.ones(len(self), dtype=bool)
         for k, (x1, x2) in kwargs.items():
             if x1 is None and x2 is None:
                 msg = f"Both range values are None for key {k}!"
