@@ -34,28 +34,25 @@ dependencies = [
   "astropy",
   "numpy",
   "pandas",
-  "dustmaps",
 ]
 
 [project.optional-dependencies]
+optional = [
+  "astroquery",
+  "dustmaps",
+]
 test = [
+  "pyia[optional]",
   "pytest >=6",
   "pytest-cov >=3",
   "pytest-astropy",
-  "pyyaml",
-  "scipy",
-  "astroquery"
-]
-dev = [
-  "pytest >=6",
-  "pytest-cov >=3",
 ]
 docs = [
+  "pyia[optional]",
   "sphinx>=7.0",
   "sphinx_copybutton",
   "sphinx_autodoc_typehints",
   "matplotlib",
-  "scipy",
   "sphinx-automodapi",
   "pydata-sphinx-theme",
 ]
