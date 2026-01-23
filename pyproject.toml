@@ -169,6 +169,7 @@ ignore = [
 [tool.pylint]
 py-version = "3.12"
 ignore-paths = [".*/_version.py"]
+ignored-classes = ["astropy.units"]
 reports.output-format = "colorized"
 similarities.ignore-imports = "yes"
 messages_control.disable = [
