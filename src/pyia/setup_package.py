@@ -1,5 +1,2 @@
-from typing import Dict, List
-
-
-def get_package_data() -> Dict[str, List[str]]:
+def get_package_data() -> dict[str, list[str]]:
     return {"pyia": ["data/*"]}

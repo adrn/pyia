@@ -174,7 +174,7 @@ def test_setattr(filename):
     assert np.all(gd.data["arr_column"] == new_vals)
 
 
-@pytest.mark.remote_data()
+@pytest.mark.remote_data
 def test_from_query():
     q = """SELECT TOP 10 * FROM gaiadr1.tgas_source"""
     gd = GaiaData.from_query(q)
@@ -182,7 +182,7 @@ def test_from_query():
     assert len(gd) == 10
 
 
-@pytest.mark.remote_data()
+@pytest.mark.remote_data
 @pytest.mark.filterwarnings("ignore::astropy.units.UnitsWarning")
 @pytest.mark.parametrize(
     ("filename", "source_dr"),

@@ -22,6 +22,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
@@ -31,7 +32,7 @@ jobs:
       - name: Run PyLint
         run: |
           echo "::add-matcher::$GITHUB_WORKSPACE/.github/matchers/pylint.json"
-          pipx run nox -s pylint
+          uv run --with pylint pylint pyia
 
   checks:
     name: Check Python ${{ matrix.python-version }} on ${{ matrix.runs-on }}
@@ -48,17 +49,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: astral-sh/setup-uv@v5
+
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
 
       - name: Install package
-        run: python -m pip install .[test]
+        run: uv sync --group test
 
       - name: Test package
         run: >-
-          python -m pytest -ra --cov --cov-report=xml --cov-report=term
+          uv run pytest -ra --cov --cov-report=xml --cov-report=term
           --durations=20
 
       - name: Upload coverage report

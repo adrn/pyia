@@ -1,10 +1,10 @@
-""" Data structures. """
+"""Data structures."""
 
 # Standard library
 import logging
 import pathlib
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Union
 
 # Third-party
 import astropy.coordinates as coord
@@ -126,13 +126,13 @@ class GaiaData:
 
     def __init__(
         self,
-        data: Union[Table, str, pathlib.Path, Dict[str, npt.ArrayLike]],
+        data: Table | str | pathlib.Path | dict[str, npt.ArrayLike],
         distance_colname: str = "parallax",
         distance_error_colname: str = "parallax_error",
-        distance_unit: Union[u.Unit, str, None] = None,
+        distance_unit: u.Unit | str | None = None,
         radial_velocity_colname: str = "radial_velocity",
         radial_velocity_error_colname: str = "radial_velocity_error",
-        radial_velocity_unit: Union[u.Unit, str, None] = None,
+        radial_velocity_unit: u.Unit | str | None = None,
         **kwargs: Any,
     ) -> None:
         if not isinstance(data, Table):
@@ -175,7 +175,7 @@ class GaiaData:
         self.radial_velocity_error_colname = str(radial_velocity_error_colname)
         self.distance_colname = str(distance_colname)
         self.distance_error_colname = str(distance_error_colname)
-        self._extra_kw: Dict[str, Union[str, u.Unit]] = {
+        self._extra_kw: dict[str, str | u.Unit] = {
             "distance_colname": self.distance_colname,
             "distance_error_colname": self.distance_error_colname,
             "distance_unit": distance_unit,
@@ -193,6 +193,7 @@ class GaiaData:
             ],
             ["radial_velocity", "radial_velocity_error", "parallax", "parallax_error"],
             [radial_velocity_unit, radial_velocity_unit, distance_unit, distance_unit],
+            strict=True,
         ):
             if colname not in self.data.colnames and colname != default:
                 msg = f"Column '{colname}' not found in data table."
@@ -219,13 +220,13 @@ class GaiaData:
         self._has_rv = self.radial_velocity_colname in self.data.colnames
 
         # For caching later
-        self._cache: Dict[Any, Any] = {}
+        self._cache: dict[Any, Any] = {}
 
     @classmethod
     def from_query(
         cls,
         query_str: str,
-        login_info: Optional[Dict[str, str]] = None,
+        login_info: dict[str, str] | None = None,
         verbose: bool = False,
     ) -> "GaiaData":
         """
@@ -279,8 +280,8 @@ class GaiaData:
     def from_source_id(
         cls,
         source_id: int,
-        source_id_dr: Optional[str] = None,
-        data_dr: Optional[str] = None,
+        source_id_dr: str | None = None,
+        data_dr: str | None = None,
         **kwargs: Any,
     ) -> "GaiaData":
         """Retrieve data from a DR for a given Gaia source_id in a DR.
@@ -333,7 +334,7 @@ class GaiaData:
         try:
             join_table = join_tables[dr_a][dr_b]
         except KeyError as err:
-            msg = f"Failed to find join table for {source_id_dr} " f"to {data_dr}"
+            msg = f"Failed to find join table for {source_id_dr} to {data_dr}"
             raise KeyError(msg) from err
 
         source_id_pref = source_id_prefixes.get(source_id_dr, source_id_dr)
@@ -350,7 +351,7 @@ class GaiaData:
     ##########################################################################
     # Python internal
     #
-    def __getattr__(self, name: Any) -> Union[npt.NDArray, u.Quantity]:
+    def __getattr__(self, name: Any) -> npt.NDArray | u.Quantity:
         # to prevent recursion errors:
         # nedbatchelder.com/blog/201010/surprising_getattr_recursion.html
         if name in ["data", "units"]:
@@ -398,11 +399,11 @@ class GaiaData:
         else:
             super().__setattr__(name, val)
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> list[str]:
         return list(super().__dir__()) + [str(k) for k in self.data.columns]
 
     def __getitem__(
-        self, slc: Union[int, slice, npt.NDArray, str]
+        self, slc: int | slice | npt.NDArray | str
     ) -> Union["GaiaData", Any]:
         if isinstance(slc, int):
             slc = slice(slc, slc + 1)
@@ -433,7 +434,7 @@ class GaiaData:
     # Computed and convenience quantities
     #
     def get_pm(
-        self, frame: Union[str, coord.BaseCoordinateFrame] = "icrs"
+        self, frame: str | coord.BaseCoordinateFrame = "icrs"
     ) -> u.Quantity[u.mas / u.yr]:
         """Get the 2D proper motion array in the specified frame
 
@@ -464,7 +465,7 @@ class GaiaData:
     @u.quantity_input  # (equivalencies=u.parallax())
     def get_distance(
         self,
-        min_parallax: Optional[u.Quantity[angle]] = None,
+        min_parallax: u.Quantity[angle] | None = None,
         fill_value: float = np.nan,
         allow_negative: bool = False,
     ) -> u.Quantity:
@@ -519,7 +520,7 @@ class GaiaData:
         return self.distance.distmod
 
     def get_radial_velocity(
-        self, fill_value: Optional[float] = None
+        self, fill_value: float | None = None
     ) -> u.Quantity[u.km / u.s]:
         """Return radial velocity but with invalid values filled with the
         specified fill value.
@@ -560,10 +561,10 @@ class GaiaData:
     def get_cov(
         self,
         RAM_threshold: u.Quantity = 1 * u.gigabyte,
-        coords: Optional[List[str]] = None,
-        units: Optional[Dict[str, u.Unit]] = None,
+        coords: list[str] | None = None,
+        units: dict[str, u.Unit] | None = None,
         warn_missing_corr: bool = False,
-    ) -> Tuple[npt.NDArray, Dict[str, u.Unit]]:
+    ) -> tuple[npt.NDArray, dict[str, u.Unit]]:
         """The Gaia data tables contain correlation coefficients and standard
         deviations for (ra, dec, parallax, pm_ra, pm_dec), but for most analyses we need
         covariance matrices. This converts the data provided by Gaia into covariance
@@ -660,7 +661,7 @@ class GaiaData:
 
         return C, units
 
-    def get_ebv(self, dustmaps_cls: Optional[Any] = None) -> npt.NDArray:
+    def get_ebv(self, dustmaps_cls: Any | None = None) -> npt.NDArray:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -685,8 +686,8 @@ class GaiaData:
         return np.array(dustmaps_cls().query(c))
 
     def get_ext(
-        self, ebv: Optional[npt.ArrayLike] = None, dustmaps_cls: Optional[Any] = None
-    ) -> Tuple[u.Quantity[u.mag], u.Quantity[u.mag], u.Quantity[u.mag]]:
+        self, ebv: npt.ArrayLike | None = None, dustmaps_cls: Any | None = None
+    ) -> tuple[u.Quantity[u.mag], u.Quantity[u.mag], u.Quantity[u.mag]]:
         """Compute the E(B-V) reddening at this location
 
         This requires the `dustmaps <http://dustmaps.readthedocs.io>`_ package
@@ -775,8 +776,8 @@ class GaiaData:
 
     def get_skycoord(
         self,
-        distance: Optional[u.Quantity[length]] = None,
-        radial_velocity: Optional[u.Quantity[vel]] = None,
+        distance: u.Quantity[length] | None = None,
+        radial_velocity: u.Quantity[vel] | None = None,
         ref_epoch: str = REF_EPOCH[LATEST_RELEASE],
     ) -> coord.SkyCoord:
         """
@@ -856,7 +857,7 @@ class GaiaData:
     def get_error_samples(
         self,
         size: int = 1,
-        rng: Union[int, np.random.Generator, None] = None,
+        rng: int | np.random.Generator | None = None,
         **get_cov_kwargs: Any,
     ) -> "GaiaData":
         """Generate a sampling from the Gaia error distribution for each source.
@@ -885,7 +886,7 @@ class GaiaData:
         # here and in get_cov()
         if rng is None:
             rng = np.random.default_rng()
-        rng = np.random.default_rng(rng)
+        rng_: np.random.Generator = np.random.default_rng(rng)
 
         C, C_units = self.get_cov(**get_cov_kwargs)
         K = C.shape[1]
@@ -900,7 +901,7 @@ class GaiaData:
         y = np.stack(arrs).T
 
         y_samples = np.array(
-            [rng.multivariate_normal(y[i], C[i], size=size) for i in range(len(y))]
+            [rng_.multivariate_normal(y[i], C[i], size=size) for i in range(len(y))]
         )
         y_samples[nan_diag[0], :, nan_diag[1]] = np.nan
 
